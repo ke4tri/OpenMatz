@@ -1,14 +1,9 @@
 import { View, Text, StyleSheet } from "react-native";
-import { useEffect } from "react";
 
-export default function MapScreen() {
-  useEffect(() => {
-    console.log("✅ Map Screen is Rendering!");
-  }, []);
-
+export default function TestScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>📍 Map Screen Loaded!</Text>
+      <Text style={styles.text}>✅ Test Screen is Working!</Text>
     </View>
   );
 }
@@ -16,13 +11,13 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "blue", // The "blue screen"
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "blue",
   },
   text: {
     fontSize: 24,
+    fontWeight: "bold",
     color: "white",
-    textAlign: "center",
   },
 });

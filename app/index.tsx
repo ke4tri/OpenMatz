@@ -1,10 +1,14 @@
-import { Stack } from "expo-router";
+// app/index.tsx
+import { useRootNavigationState, Redirect } from 'expo-router';
 
-export default function RootLayout() {
-  return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="screens/gym-details" options={{ title: "Gym Details" }} />
-    </Stack>
-  );
+export default function Index() {
+  const rootNavigationState = useRootNavigationState();
+
+  // Wait until navigation system is fully ready
+  if (!rootNavigationState?.key) {
+    return null; // or <LoadingScreen /> if you want a placeholder
+  }
+
+  console.log('✅ Navigation Ready! Redirecting to /map');
+  return <Redirect href="/map" />;
 }

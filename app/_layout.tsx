@@ -1,17 +1,16 @@
-import { Stack } from "expo-router";
-import { View, Text } from "react-native";
+import { Slot } from 'expo-router';
+import { View, Text } from 'react-native';
+import { useEffect } from 'react';
 
 export default function RootLayout() {
+  useEffect(() => {
+    console.log('✅ RootLayout is Rendering!');
+  }, []);
+
   return (
-    <View style={{ flex: 1, backgroundColor: "green" }}> 
-      {/* 🔰 Add debug color to confirm layout is rendering */}
-      <Text style={{ fontSize: 20, fontWeight: "bold", color: "white", textAlign: "center" }}>
-        ✅ Layout Loaded
-      </Text>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="screens/gym-details" options={{ title: "Gym Details" }} />
-      </Stack>
+    <View style={{ flex: 1, backgroundColor: 'green' }}>
+      <Text style={{ color: 'white', textAlign: 'center' }}>✅ RootLayout Loaded</Text>
+      <Slot />
     </View>
   );
 }
