@@ -22,6 +22,14 @@
       "longitude": -86.92513,
       "logo": "https://www.tbjja.com/wp-content/uploads/2018/08/tbjja-aff-logo-298x300.png",
       "openMatTimes": ["Sunday: 1pm - 2pm", "Saturday: 6am - 7am", "Saturday: 10am - 11am"]
+    },
+    {
+      "id": "4",
+      "name": "Random",
+      "latitude": 35.78557,
+      "longitude": -86.92513,
+      "logo": null,
+      "openMatTimes": ["Sunday: 1pm - 2pm", "Saturday: 6am - 7am", "Saturday: 10am - 11am"]
     }
   ]
   
