@@ -1,0 +1,27 @@
+[
+    {
+      "id": "1",
+      "name": "10th Planet Nashville",
+      "latitude": 36.1627,
+      "longitude": -86.7816,
+      "logo": "https://images.squarespace-cdn.com/content/v1/5b034214b105984c35256785/1545347164682-JH9HVX7QKD5520LZHALW/IMG_1837.PNG",
+      "openMatTimes": ["Sunday: 1pm - 2pm", "Saturday: 6am - 7am", "Saturday: 10am - 11am"]
+    },
+    {
+      "id": "2",
+      "name": "Profectus",
+      "latitude": 36.1745,
+      "longitude": -86.7679,
+      "logo": "https://smoothcomp.com/pictures/t/825642-k200/profectus-jiu-jitsu.png",
+      "openMatTimes": ["Sunday: 1pm - 2pm", "Saturday: 6am - 7am", "Saturday: 10am - 11am"]
+    },
+    {
+      "id": "3",
+      "name": "Tennesee BJJ",
+      "latitude": 35.75557,
+      "longitude": -86.92513,
+      "logo": "https://www.tbjja.com/wp-content/uploads/2018/08/tbjja-aff-logo-298x300.png",
+      "openMatTimes": ["Sunday: 1pm - 2pm", "Saturday: 6am - 7am", "Saturday: 10am - 11am"]
+    }
+  ]
+  
