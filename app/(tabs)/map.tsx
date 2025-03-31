@@ -1,4 +1,3 @@
-// File: app/(tabs)/map.tsx
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import MapView, { Marker, Callout } from "react-native-maps";
