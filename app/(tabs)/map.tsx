@@ -26,9 +26,9 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
 <Link href="/drawer/map" asChild>
-  <TouchableOpacity style={styles.hamburger}>
+  {/* <TouchableOpacity style={styles.hamburger}>
     <Text style={styles.hamburgerText}>☰</Text>
-  </TouchableOpacity>
+  </TouchableOpacity> */}
 </Link>
 
       <MapView
