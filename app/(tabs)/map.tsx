@@ -1,6 +1,8 @@
+// File: app/(tabs)/map.tsx
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import MapView, { Marker, Callout } from "react-native-maps";
+import { Link } from "expo-router";
 import rawGyms from "../../assets/gyms.json";
 
 const fallbackImages = [
@@ -23,13 +25,21 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView style={styles.map} initialRegion={region}>
+<Link href="/drawer/map" asChild>
+  <TouchableOpacity style={styles.hamburger}>
+    <Text style={styles.hamburgerText}>☰</Text>
+  </TouchableOpacity>
+</Link>
+
+      <MapView
+        style={styles.map}
+        initialRegion={region}
+        showsUserLocation={true}
+      >
         {rawGyms.map((gym) => {
           const logoSource = gym.logo
             ? { uri: gym.logo }
             : fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
-
-          const isFallback = !gym.logo;
 
           return (
             <Marker
@@ -39,7 +49,7 @@ export default function MapScreen() {
             >
               <Image
                 source={logoSource}
-                style={isFallback ? styles.fallbackImage : styles.markerImage}
+                style={gym.logo ? styles.markerImage : styles.fallbackImage}
                 resizeMode="contain"
               />
               <Callout>
@@ -66,14 +76,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   markerImage: {
-    width: 150,
-    height: 40,
-    borderRadius: 20,
+    width: 100,
+    height: 30,
+    borderRadius: 15,
   },
   fallbackImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   calloutContainer: {
     backgroundColor: "white",
@@ -89,5 +99,23 @@ const styles = StyleSheet.create({
   },
   gymTime: {
     fontSize: 14,
+  },
+  hamburger: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 1,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  hamburgerText: {
+    fontSize: 24,
+    fontWeight: "bold",
   },
 });

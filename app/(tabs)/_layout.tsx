@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import MapScreen from "./map";
 
 export default function TabLayout() {
   return (

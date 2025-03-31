@@ -1,16 +1,14 @@
-import { Slot } from 'expo-router';
-import { View, Text } from 'react-native';
-import { useEffect } from 'react';
+import { createDrawerNavigator } from "@react-navigation/drawer";
+import MapScreen from "./(tabs)/map";
+import SubmitScreen from "./drawer/submit";
 
-export default function RootLayout() {
-  useEffect(() => {
-    console.log('✅ RootLayout is Rendering!');
-  }, []);
+const Drawer = createDrawerNavigator();
 
+export default function Layout() {
   return (
-    <View style={{ flex: 1, backgroundColor: 'green' }}>
-      <Text style={{ color: 'white', textAlign: 'center' }}>✅ RootLayout Loaded</Text>
-      <Slot />
-    </View>
+    <Drawer.Navigator initialRouteName="Map">
+      <Drawer.Screen name="Map" component={MapScreen} />
+      <Drawer.Screen name="Submit a Gym" component={SubmitScreen} />
+    </Drawer.Navigator>
   );
 }
