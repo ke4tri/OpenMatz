@@ -60,40 +60,40 @@ export default function MapScreen() {
           setZoomLevel(calculateZoomLevel(newRegion.latitudeDelta));
         }}
       >
-        {rawGyms.map((gym) => {
-          const logoSource = gym.logo
-            ? { uri: gym.logo }
-            : fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+{rawGyms.map((gym) => {
+  const isFallback = !gym.logo;
+  const logoSource = isFallback
+    ? fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
+    : { uri: gym.logo };
 
-          const markerSize = gym.logo
-            ? getMarkerSize()
-            : { width: 40, height: 40 };
+  const markerSize = getMarkerSize(); // Apply the same sizing to both
 
-          return (
-            <Marker
-              key={gym.id}
-              coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
-              title={gym.name}
-            >
-              <Image
-                source={logoSource}
-                style={markerSize}
-                resizeMode="contain"
-              />
-              <Callout>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.gymName}>{gym.name}</Text>
-                  {gym.openMatTimes &&
-                    gym.openMatTimes.map((time, index) => (
-                      <Text key={index} style={styles.gymTime}>
-                        {time}
-                      </Text>
-                    ))}
-                </View>
-              </Callout>
-            </Marker>
-          );
-        })}
+  return (
+    <Marker
+      key={gym.id}
+      coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
+      title={gym.name}
+    >
+      <Image
+        source={logoSource}
+        style={markerSize} // Use the dynamic size here
+        resizeMode="contain"
+      />
+      <Callout>
+        <View style={styles.calloutContainer}>
+          <Text style={styles.gymName}>{gym.name}</Text>
+          {gym.openMatTimes &&
+            gym.openMatTimes.map((time, index) => (
+              <Text key={index} style={styles.gymTime}>
+                {time}
+              </Text>
+            ))}
+        </View>
+      </Callout>
+    </Marker>
+  );
+})}
+
       </MapView>
     </View>
   );
