@@ -1,143 +1,135 @@
-// File: app/(tabs)/map.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
-  Image,
+  ScrollView,
   TouchableOpacity,
 } from "react-native";
-import MapView, { Marker, Callout, Region } from "react-native-maps";
-import { Link } from "expo-router";
-import rawGyms from "../../assets/gyms.json";
 
-const fallbackImages = [
-  require("../../assets/fallbacks/BlackBelt.png"),
-  require("../../assets/fallbacks/BrownBelt.png"),
-  require("../../assets/fallbacks/coral.png"),
-];
+export default function SubmitScreen() {
+  const [gymName, setGymName] = useState("");
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [openMatTimes, setOpenMatTimes] = useState("");
 
-export default function MapScreen() {
-  const [region, setRegion] = useState<Region>({
-    latitude: 36.1627,
-    longitude: -86.7816,
-    latitudeDelta: 0.1,
-    longitudeDelta: 0.1,
-  });
+  const handleSubmit = () => {
+    const newGym = {
+      name: gymName.trim(),
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      logo: logoUrl.trim(),
+      openMatTimes: [openMatTimes.trim()],
+    };
 
-  const [zoomLevel, setZoomLevel] = useState(10);
-
-  const calculateZoomLevel = (latitudeDelta: number) => {
-    const zoom = Math.round(Math.log(360 / latitudeDelta) / Math.LN2);
-    return Math.max(1, Math.min(zoom, 20));
+    console.log("Submitted Gym:", newGym);
+    // Eventually this will POST to Firebase or store it locally
   };
-
-  const getMarkerSize = () => {
-    if (zoomLevel >= 15) return { width: 100, height: 30 };
-    if (zoomLevel >= 12) return { width: 80, height: 24 };
-    return { width: 60, height: 20 };
-  };
-
-  useEffect(() => {
-    console.log("✅ Map Screen is Rendering!");
-    console.log("📍 Loaded Gyms:", rawGyms);
-  }, []);
 
   return (
-    <View style={styles.container}>
-      <Link href="/drawer/map" asChild>
-        {/* <TouchableOpacity style={styles.hamburger}>
-          <Text style={styles.hamburgerText}>☰</Text>
-        </TouchableOpacity> */}
-      </Link>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Submit a Gym</Text>
 
-      <MapView
-        style={styles.map}
-        initialRegion={region}
-        showsUserLocation={true}
-        onRegionChangeComplete={(newRegion) => {
-          setRegion(newRegion);
-          setZoomLevel(calculateZoomLevel(newRegion.latitudeDelta));
-        }}
-      >
-        {rawGyms.map((gym) => {
-          const logoSource = gym.logo
-            ? { uri: gym.logo }
-            : fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
+      <Text style={styles.label}>Gym Name</Text>
+      <TextInput
+        value={gymName}
+        onChangeText={setGymName}
+        placeholder="ENTER GYM NAME"
+        placeholderTextColor="#d4d4aa"
+        style={styles.input}
+      />
 
-          const markerSize = getMarkerSize();
+      <Text style={styles.label}>Latitude</Text>
+      <TextInput
+        value={latitude}
+        onChangeText={setLatitude}
+        placeholder="ENTER LATITUDE"
+        placeholderTextColor="#d4d4aa"
+        keyboardType="numeric"
+        style={styles.input}
+      />
 
-          return (
-            <Marker
-              key={gym.id}
-              coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
-              title={gym.name}
-            >
-              <Image
-                source={logoSource}
-                style={[styles.markerImage, markerSize]}
-                resizeMode="contain"
-              />
-              <Callout>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.gymName}>{gym.name}</Text>
-                  {gym.openMatTimes &&
-                    gym.openMatTimes.map((time, index) => (
-                      <Text key={index} style={styles.gymTime}>
-                        {time}
-                      </Text>
-                    ))}
-                </View>
-              </Callout>
-            </Marker>
-          );
-        })}
-      </MapView>
-    </View>
+      <Text style={styles.label}>Longitude</Text>
+      <TextInput
+        value={longitude}
+        onChangeText={setLongitude}
+        placeholder="ENTER LONGITUDE"
+        placeholderTextColor="#d4d4aa"
+        keyboardType="numeric"
+        style={styles.input}
+      />
+
+      <Text style={styles.label}>Logo URL</Text>
+      <TextInput
+        value={logoUrl}
+        onChangeText={setLogoUrl}
+        placeholder="ENTER LOGO IMAGE URL"
+        placeholderTextColor="#d4d4aa"
+        style={styles.input}
+      />
+
+      <Text style={styles.label}>Open Mat Times</Text>
+      <TextInput
+        value={openMatTimes}
+        onChangeText={setOpenMatTimes}
+        placeholder="e.g. Monday 6:00 - 7:00"
+        placeholderTextColor="#d4d4aa"
+        style={styles.input}
+      />
+      <Text style={styles.hintText}>Format: Monday hh:mm - hh:mm</Text>
+
+      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <Text style={styles.buttonText}>Submit Gym</Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    padding: 20,
+    backgroundColor: "#f0f0f0",
+    flexGrow: 1,
   },
-  map: {
-    flex: 1,
-  },
-  markerImage: {
-    resizeMode: "contain",
-  },
-  calloutContainer: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 10,
-    minWidth: 200,
-    maxWidth: 250,
-  },
-  gymName: {
+  title: {
+    fontSize: 24,
     fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  label: {
     fontSize: 16,
+    fontWeight: "600",
     marginBottom: 5,
   },
-  gymTime: {
-    fontSize: 14,
+  input: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    marginBottom: 10,
+    color: "#000",
   },
-  hamburger: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 1,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
+  hintText: {
+    fontSize: 12,
+    color: "#555",
+    marginBottom: 15,
+    marginLeft: 4,
   },
-  hamburgerText: {
-    fontSize: 24,
+  button: {
+    backgroundColor: "#007AFF",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
     fontWeight: "bold",
   },
 });
