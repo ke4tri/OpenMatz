@@ -15,6 +15,8 @@ const fallbackImages = [
   require("../../assets/fallbacks/BlackBelt.png"),
   require("../../assets/fallbacks/BrownBelt.png"),
   require("../../assets/fallbacks/coral.png"),
+  require("../../assets/fallbacks/BJJ_White_Belt.svg.png"),
+  require("../../assets/fallbacks/WhiteBelt.png")
 ];
 
 export default function MapScreen() {
@@ -60,39 +62,41 @@ export default function MapScreen() {
           setZoomLevel(calculateZoomLevel(newRegion.latitudeDelta));
         }}
       >
-        {rawGyms.map((gym) => {
+{rawGyms.map((gym) => {
   const isFallback = !gym.logo;
   const logoSource = isFallback
-    ? fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
+    // ? fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
+    ? fallbackImages[4]
     : { uri: gym.logo };
 
   const markerSize = getMarkerSize(); // Apply the same sizing to both
 
-          return (
-            <Marker
-              key={gym.id}
-              coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
-              title={gym.name}
-            >
-              <Image
-                source={logoSource}
-                style={markerSize}
-                resizeMode="contain"
-              />
-              <Callout>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.gymName}>{gym.name}</Text>
-                  {gym.openMatTimes &&
-                    gym.openMatTimes.map((time, index) => (
-                      <Text key={index} style={styles.gymTime}>
-                        {time}
-                      </Text>
-                    ))}
-                </View>
-              </Callout>
-            </Marker>
-          );
-        })}
+  return (
+    <Marker
+      key={gym.id}
+      coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
+      title={gym.name}
+    >
+      <Image
+        source={logoSource}
+        style={markerSize} // Use the dynamic size here
+        resizeMode="contain"
+      />
+      <Callout>
+        <View style={styles.calloutContainer}>
+          <Text style={styles.gymName}>{gym.name}</Text>
+          {gym.openMatTimes &&
+            gym.openMatTimes.map((time, index) => (
+              <Text key={index} style={styles.gymTime}>
+                {time}
+              </Text>
+            ))}
+        </View>
+      </Callout>
+    </Marker>
+  );
+})}
+
       </MapView>
     </View>
   );
