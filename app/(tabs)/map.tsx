@@ -1,11 +1,9 @@
-// File: app/(tabs)/map.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Image,
-  TouchableOpacity,
 } from "react-native";
 import MapView, { Marker, Callout, Region } from "react-native-maps";
 import { Link } from "expo-router";
@@ -16,7 +14,7 @@ const fallbackImages = [
   require("../../assets/fallbacks/BrownBelt.png"),
   require("../../assets/fallbacks/coral.png"),
   require("../../assets/fallbacks/BJJ_White_Belt.svg.png"),
-  require("../../assets/fallbacks/WhiteBelt.png")
+  require("../../assets/fallbacks/WhiteBelt.png"),
 ];
 
 export default function MapScreen() {
@@ -40,18 +38,11 @@ export default function MapScreen() {
     return { width: 100, height: 200 };
   };
 
-  useEffect(() => {
-    console.log("✅ Map Screen is Rendering!");
-    console.log("📍 Loaded Gyms:", rawGyms);
-  }, []);
+  const gyms = rawGyms.filter((g) => g.approved);
 
   return (
     <View style={styles.container}>
-      <Link href="/drawer/map" asChild>
-        {/* <TouchableOpacity style={styles.hamburger}>
-          <Text style={styles.hamburgerText}>☰</Text>
-        </TouchableOpacity> */}
-      </Link>
+      <Link href="/drawer/map" asChild></Link>
 
       <MapView
         style={styles.map}
@@ -62,41 +53,39 @@ export default function MapScreen() {
           setZoomLevel(calculateZoomLevel(newRegion.latitudeDelta));
         }}
       >
-{rawGyms.map((gym) => {
-  const isFallback = !gym.logo;
-  const logoSource = isFallback
-    // ? fallbackImages[Math.floor(Math.random() * fallbackImages.length)]
-    ? fallbackImages[4]
-    : { uri: gym.logo };
+        {gyms.map((gym) => {
+          const isFallback = !gym.logo;
+          const logoSource = isFallback
+            ? fallbackImages[4]
+            : { uri: gym.logo };
 
-  const markerSize = getMarkerSize(); // Apply the same sizing to both
+          const markerSize = getMarkerSize();
 
-  return (
-    <Marker
-      key={gym.id}
-      coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
-      title={gym.name}
-    >
-      <Image
-        source={logoSource}
-        style={markerSize} // Use the dynamic size here
-        resizeMode="contain"
-      />
-      <Callout>
-        <View style={styles.calloutContainer}>
-          <Text style={styles.gymName}>{gym.name}</Text>
-          {gym.openMatTimes &&
-            gym.openMatTimes.map((time, index) => (
-              <Text key={index} style={styles.gymTime}>
-                {time}
-              </Text>
-            ))}
-        </View>
-      </Callout>
-    </Marker>
-  );
-})}
-
+          return (
+            <Marker
+              key={gym.id}
+              coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
+              title={gym.name}
+            >
+              <Image
+                source={logoSource}
+                style={markerSize}
+                resizeMode="contain"
+              />
+              <Callout>
+                <View style={styles.calloutContainer}>
+                  <Text style={styles.gymName}>{gym.name}</Text>
+                  {gym.openMatTimes &&
+                    gym.openMatTimes.map((time, index) => (
+                      <Text key={index} style={styles.gymTime}>
+                        {time}
+                      </Text>
+                    ))}
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
       </MapView>
     </View>
   );
@@ -123,23 +112,5 @@ const styles = StyleSheet.create({
   },
   gymTime: {
     fontSize: 14,
-  },
-  hamburger: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 1,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  hamburgerText: {
-    fontSize: 24,
-    fontWeight: "bold",
   },
 });
