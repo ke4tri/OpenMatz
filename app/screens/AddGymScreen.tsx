@@ -1,8 +1,22 @@
 // screens/AddGymScreen.tsx
 import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, ScrollView, Switch, Text, Alert } from 'react-native';
+import {
+  View,
+  TextInput,
+  Button,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  Text,
+  Alert,
+} from 'react-native';
+import type { Gym } from '../types';
 
-const AddGymScreen = ({ onAddGym }) => {
+type AddGymScreenProps = {
+  onAddGym: (gym: Gym) => void;
+};
+
+const AddGymScreen = ({ onAddGym }: AddGymScreenProps) => {
   const [formData, setFormData] = useState({
     name: '',
     city: '',
@@ -14,7 +28,7 @@ const AddGymScreen = ({ onAddGym }) => {
     address: '',
     email: '',
     phone: '',
-    approved: false
+    approved: false,
   });
 
   const handleChange = (key: string, value: string) => {
@@ -27,14 +41,14 @@ const AddGymScreen = ({ onAddGym }) => {
       return;
     }
 
-    const newGym = {
+    const newGym: Gym = {
       ...formData,
       id: Date.now().toString(),
       latitude: parseFloat(formData.latitude),
       longitude: parseFloat(formData.longitude),
       openMatTimes: formData.openMatTimes
         ? formData.openMatTimes.split(',').map(str => str.trim())
-        : []
+        : [],
     };
 
     onAddGym(newGym);
@@ -50,7 +64,7 @@ const AddGymScreen = ({ onAddGym }) => {
       address: '',
       email: '',
       phone: '',
-      approved: false
+      approved: false,
     });
   };
 
@@ -59,20 +73,23 @@ const AddGymScreen = ({ onAddGym }) => {
       {Object.entries(formData).map(([key, val]) => {
         if (key === 'approved') return null;
         return (
-          <TextInput
-            key={key}
-            placeholder={key}
-            value={val}
-            onChangeText={(text) => handleChange(key, text)}
-            style={styles.input}
-          />
-        );
+            <TextInput
+              key={key}
+              placeholder={key}
+              value={String(val)}
+              onChangeText={(text) => handleChange(key, text)}
+              style={styles.input}
+            />
+          );
+          
       })}
       <View style={styles.switchRow}>
         <Text>Approved</Text>
         <Switch
           value={formData.approved}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, approved: value }))}
+          onValueChange={(value) =>
+            setFormData(prev => ({ ...prev, approved: value }))
+          }
         />
       </View>
       <Button title="Submit Gym" onPress={handleSubmit} />
@@ -82,21 +99,21 @@ const AddGymScreen = ({ onAddGym }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20
+    padding: 20,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 10,
     marginBottom: 10,
-    borderRadius: 5
+    borderRadius: 5,
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 10
-  }
+    marginVertical: 10,
+  },
 });
 
 export default AddGymScreen;

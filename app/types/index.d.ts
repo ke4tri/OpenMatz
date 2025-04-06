@@ -1,13 +1,4 @@
-// ✅ FILE: app/types/index.d.ts
-
-// Allows importing JSON files with type safety
-declare module "*.json" {
-    const value: unknown;
-    export default value;
-  }
-  
-  // Shared Gym type across the app
-  export type Gym = {
+export interface Gym {
     id: string;
     name: string;
     city: string;
@@ -20,4 +11,12 @@ declare module "*.json" {
     email: string;
     phone: string;
     approved: boolean;
+  }
+  
+  // Add this
+  export type GymForm = Omit<Gym, "latitude" | "longitude" | "openMatTimes"> & {
+    latitude: string;
+    longitude: string;
+    openMatTimes: string | string[];
   };
+  
