@@ -14,8 +14,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "2",
@@ -30,8 +29,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "3",
@@ -48,8 +46,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "4",
@@ -66,8 +63,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "5",
@@ -83,8 +79,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "6",
@@ -108,8 +103,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "7",
@@ -124,8 +118,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "8",
@@ -140,8 +133,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "9",
@@ -156,8 +148,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "10",
@@ -173,8 +164,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "11",
@@ -189,8 +179,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "12",
@@ -205,8 +194,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "13",
@@ -221,8 +209,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "14",
@@ -237,8 +224,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "15",
@@ -253,8 +239,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "16",
@@ -269,8 +254,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "17",
@@ -285,8 +269,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "18",
@@ -301,8 +284,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "19",
@@ -317,8 +299,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "20",
@@ -333,8 +314,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "21",
@@ -342,15 +322,14 @@
     "city": "Mt. Juliet",
     "state": "Tennessee",
     "latitude": 36.21978,
-    "longitude": -86.5728,
+    "longitude": -86.57280,
     "logo": "",
     "openMatTimes": [
       "None Listed Call: 615-678-6685"
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "22",
@@ -365,8 +344,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "23",
@@ -381,8 +359,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "24",
@@ -397,8 +374,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "25",
@@ -413,8 +389,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "26",
@@ -429,8 +404,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "27",
@@ -445,8 +419,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "28",
@@ -461,8 +434,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "29",
@@ -477,8 +449,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "30",
@@ -493,8 +464,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "32",
@@ -509,8 +479,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "33",
@@ -525,8 +494,7 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   },
   {
     "id": "34",
@@ -541,7 +509,6 @@
     ],
     "address": "",
     "email": "",
-    "phone": "",
-    "approved": true
+    "phone": ""
   }
 ]

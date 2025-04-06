@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -6,79 +7,196 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Switch,
+  Alert,
 } from "react-native";
+import gymsData from "../../assets/gyms.json";
+import type { Gym } from "../../types";
 
 export default function SubmitScreen() {
-  const [gymName, setGymName] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-  const [logoUrl, setLogoUrl] = useState("");
-  const [openMatTimes, setOpenMatTimes] = useState("");
+  const [gyms, setGyms] = useState<Gym[]>(gymsData as Gym[]);
 
-  const handleSubmit = () => {
-    const newGym = {
-      name: gymName.trim(),
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
-      logo: logoUrl.trim(),
-      openMatTimes: [openMatTimes.trim()],
+  const [formData, setFormData] = useState<Omit<Gym, "openMatTimes"> & { openMatTimes: string | string[] }>({
+    id: "",
+    name: "",
+    city: "",
+    state: "",
+    latitude: "",
+    longitude: "",
+    logo: "",
+    openMatTimes: [],
+    address: "",
+    email: "",
+    phone: "",
+    approved: false,
+  });
+
+  const handleChange = (key: keyof Gym, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSubmit = async () => {
+    const openMatStrings = typeof formData.openMatTimes === 'string'
+      ? formData.openMatTimes.split(',').map((t) => t.trim())
+      : formData.openMatTimes;
+
+    const errors: string[] = [];
+    const dayRegex = /^(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday)/i;
+    const formatRegex = /^\w+:\s*\d{1,2}(am|pm)\s*-\s*\d{1,2}(am|pm)$/i;
+
+    for (const time of openMatStrings) {
+      if (!dayRegex.test(time)) {
+        errors.push(`Missing or invalid day name in: "${time}"`);
+      }
+      if (!time.includes(':')) {
+        errors.push(`Missing colon after day in: "${time}"`);
+      }
+      if (!/(\d{1,2}(am|pm))\s*-\s*(\d{1,2}(am|pm))/.test(time)) {
+        errors.push(`Missing or incorrect AM/PM format in: "${time}"`);
+      }
+      if (!formatRegex.test(time)) {
+        errors.push(`Incorrect format in: "${time}" (should be like 'Monday: 9am - 10am')`);
+      }
+    }
+
+    if (errors.length > 0) {
+      Alert.alert("Open Mat Time Format Error", errors.join("\n"));
+      return;
+    }
+
+    if (!formData.name || !formData.latitude || !formData.longitude) {
+      Alert.alert("Missing Required Fields", "Name, Latitude, and Longitude are required.");
+      return;
+    }
+
+    const newGym: Gym = {
+      id: Date.now().toString(),
+      name: formData.name,
+      city: formData.city,
+      state: formData.state,
+      latitude: Number(formData.latitude) || 0,
+      longitude: Number(formData.longitude) || 0,
+      logo: formData.logo,
+      openMatTimes: openMatStrings,
+      address: formData.address,
+      email: formData.email,
+      phone: formData.phone,
+      approved: formData.approved,
     };
 
-    console.log("Submitted Gym:", newGym);
-    // Eventually this will POST to Firebase or store it locally
+    const updatedGyms = [...gyms, newGym];
+    setGyms(updatedGyms);
+    await AsyncStorage.setItem('customGyms', JSON.stringify(updatedGyms));
+
+    console.log("✅ New gym added:", newGym);
+    Alert.alert("Success", "Gym has been added!");
+
+    setFormData({
+      id: "",
+      name: "",
+      city: "",
+      state: "",
+      latitude: "",
+      longitude: "",
+      logo: "",
+      openMatTimes: [],
+      address: "",
+      email: "",
+      phone: "",
+      approved: false,
+    });
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
       <Text style={styles.title}>Submit a Gym</Text>
 
-      <Text style={styles.label}>Gym Name</Text>
       <TextInput
-        value={gymName}
-        onChangeText={setGymName}
-        placeholder="ENTER GYM NAME"
-        placeholderTextColor="#d4d4aa"
+        value={formData.name}
+        onChangeText={(text) => handleChange("name", text)}
+        placeholder="Gym Name"
+        placeholderTextColor="#999"
+        style={styles.input}
+      />
+      <TextInput
+        value={formData.latitude}
+        onChangeText={(text) => handleChange("latitude", text)}
+        placeholder="Latitude"
+        placeholderTextColor="#999"
+        keyboardType="default"
+        style={styles.input}
+      />
+      <TextInput
+        value={formData.longitude}
+        onChangeText={(text) => handleChange("longitude", text)}
+        placeholder="Longitude"
+        placeholderTextColor="#999"
+        keyboardType="default"
+        style={styles.input}
+      />
+      <TextInput
+        value={formData.logo}
+        onChangeText={(text) => handleChange("logo", text)}
+        placeholder="Logo URL"
+        placeholderTextColor="#999"
+        style={styles.input}
+      />
+      <TextInput
+        value={typeof formData.openMatTimes === 'string' ? formData.openMatTimes : formData.openMatTimes.join(", ")}
+        onChangeText={(text) => handleChange("openMatTimes", text)}
+        placeholder="Monday: 9am - 10am (comma separated)"
+        placeholderTextColor="#999"
+        style={styles.input}
+      />
+      <Text style={{ fontSize: 12, color: '#555', marginBottom: 10 }}>
+        Format: Monday: 9am - 10am (comma separated)
+      </Text>
+
+      <TextInput
+        value={formData.city}
+        onChangeText={(text) => handleChange("city", text)}
+        placeholder="City"
+        placeholderTextColor="#999"
+        style={styles.input}
+      />
+      <TextInput
+        value={formData.state}
+        onChangeText={(text) => handleChange("state", text)}
+        placeholder="State"
+        placeholderTextColor="#999"
+        style={styles.input}
+      />
+      <TextInput
+        value={formData.address}
+        onChangeText={(text) => handleChange("address", text)}
+        placeholder="Address"
+        placeholderTextColor="#999"
+        style={styles.input}
+      />
+      <TextInput
+        value={formData.email}
+        onChangeText={(text) => handleChange("email", text)}
+        placeholder="Email"
+        placeholderTextColor="#999"
+        keyboardType="email-address"
+        style={styles.input}
+      />
+      <TextInput
+        value={formData.phone}
+        onChangeText={(text) => handleChange("phone", text)}
+        placeholder="Phone Number"
+        placeholderTextColor="#999"
+        keyboardType="phone-pad"
         style={styles.input}
       />
 
-      <Text style={styles.label}>Latitude</Text>
-      <TextInput
-        value={latitude}
-        onChangeText={setLatitude}
-        placeholder="ENTER LATITUDE"
-        placeholderTextColor="#d4d4aa"
-        keyboardType="numeric"
-        style={styles.input}
-      />
-
-      <Text style={styles.label}>Longitude</Text>
-      <TextInput
-        value={longitude}
-        onChangeText={setLongitude}
-        placeholder="ENTER LONGITUDE"
-        placeholderTextColor="#d4d4aa"
-        keyboardType="numeric"
-        style={styles.input}
-      />
-
-      <Text style={styles.label}>Logo URL</Text>
-      <TextInput
-        value={logoUrl}
-        onChangeText={setLogoUrl}
-        placeholder="ENTER LOGO IMAGE URL"
-        placeholderTextColor="#d4d4aa"
-        style={styles.input}
-      />
-
-      <Text style={styles.label}>Open Mat Times</Text>
-      <TextInput
-        value={openMatTimes}
-        onChangeText={setOpenMatTimes}
-        placeholder="e.g. Monday 6:00 - 7:00"
-        placeholderTextColor="#d4d4aa"
-        style={styles.input}
-      />
-      <Text style={styles.hintText}>Format: Monday hh:mm - hh:mm</Text>
+      <View style={styles.switchRow}>
+        <Text>Approved</Text>
+        <Switch
+          value={formData.approved}
+          onValueChange={(val) => handleChange("approved", val)}
+        />
+      </View>
 
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Submit Gym</Text>
@@ -99,11 +217,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 5,
-  },
   input: {
     backgroundColor: "#fff",
     borderRadius: 8,
@@ -114,11 +227,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "#000",
   },
-  hintText: {
-    fontSize: 12,
-    color: "#555",
-    marginBottom: 15,
-    marginLeft: 4,
+  switchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
   },
   button: {
     backgroundColor: "#007AFF",
