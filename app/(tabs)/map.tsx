@@ -33,12 +33,19 @@ export default function MapScreen() {
   };
 
   const getMarkerSize = () => {
-    if (zoomLevel >= 15) return { width: 75, height: 125 };
-    if (zoomLevel >= 12) return { width: 75, height: 125 };
-    return { width: 100, height: 200 };
+    // The smaller the delta, the more zoomed in we are.
+    const zoomRatio = 0.1 / region.latitudeDelta; // base it around your default (0.1)
+    const clamped = Math.min(Math.max(zoomRatio, 2.5), 8); // keep it within sane range
+  
+    const width = 60 * clamped;
+    const height = width * 0.3;
+  
+    return { width, height };
   };
 
   const gyms = rawGyms.filter((g) => g.approved);
+  const logoCutoffZoom = 10; // tweak this value until it feels right
+
 
   return (
     <View style={styles.container}>
@@ -62,28 +69,30 @@ export default function MapScreen() {
           const markerSize = getMarkerSize();
 
           return (
-            <Marker
-              key={gym.id}
-              coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
-              title={gym.name}
-            >
-              <Image
-                source={logoSource}
-                style={markerSize}
-                resizeMode="contain"
-              />
-              <Callout>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.gymName}>{gym.name}</Text>
-                  {gym.openMatTimes &&
-                    gym.openMatTimes.map((time, index) => (
-                      <Text key={index} style={styles.gymTime}>
-                        {time}
-                      </Text>
-                    ))}
-                </View>
-              </Callout>
-            </Marker>
+<Marker
+  key={gym.id}
+  coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
+  title={gym.name}
+>
+  {zoomLevel >= logoCutoffZoom ? (
+    <Image
+      source={logoSource}
+      style={[styles.markerImage, getMarkerSize()]}
+      resizeMode="contain"
+    />
+  ) : (
+    <View style={styles.dotMarker} />
+  )}
+  <Callout>
+    <View style={styles.calloutContainer}>
+      <Text style={styles.gymName}>{gym.name}</Text>
+      {gym.openMatTimes?.map((time, index) => (
+        <Text key={index} style={styles.gymTime}>{time}</Text>
+      ))}
+    </View>
+  </Callout>
+</Marker>
+
           );
         })}
       </MapView>
@@ -97,6 +106,11 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  markerImage: {
+    width: 60,
+    height: 20,
+    resizeMode: "contain",
   },
   calloutContainer: {
     backgroundColor: "white",
@@ -113,4 +127,33 @@ const styles = StyleSheet.create({
   gymTime: {
     fontSize: 14,
   },
+  hamburger: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 1,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  hamburgerText: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+
+  // 🔵 Add this here 👇
+  dotMarker: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "blue",
+    borderWidth: 1,
+    borderColor: "white",
+  },
 });
+
