@@ -37,4 +37,5 @@ yarn-error.*
 
 app-example
 .env
-assets/gyms2.json
+assets/gyms.json
+assets/gyms.json
