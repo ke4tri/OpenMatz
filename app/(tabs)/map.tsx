@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -26,17 +26,7 @@ export default function MapScreen() {
   });
 
   const [zoomLevel, setZoomLevel] = useState(10);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const newZoom = calculateZoomLevel(region.latitudeDelta);
-      setZoomLevel(newZoom);
-      console.log("🔁 Debounced Zoom Level:", newZoom);
-    }, 100); // Debounce delay (100ms)
-  
-    return () => clearTimeout(timeout);
-  }, [region.latitudeDelta]);
-  
+  const markerRefs = useRef<{ [key: string]: Marker | null }>({});
 
   const calculateZoomLevel = (latitudeDelta: number) => {
     const zoom = Math.round(Math.log(360 / latitudeDelta) / Math.LN2);
@@ -44,19 +34,25 @@ export default function MapScreen() {
   };
 
   const getMarkerSize = () => {
-    // The smaller the delta, the more zoomed in we are.
-    const zoomRatio = 0.1 / region.latitudeDelta; // base it around your default (0.1)
-    const clamped = Math.min(Math.max(zoomRatio, 2.5), 8); // keep it within sane range
-  
+    const zoomRatio = 0.1 / region.latitudeDelta;
+    const clamped = Math.min(Math.max(zoomRatio, 2.5), 8);
     const width = 60 * clamped;
     const height = width * 0.3;
-  
     return { width, height };
   };
 
-  const gyms = rawGyms.filter((g) => g.approved);
-  const logoCutoffZoom = 10; // tweak this value until it feels right
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const newZoom = calculateZoomLevel(region.latitudeDelta);
+      setZoomLevel(newZoom);
+      console.log("🔁 Debounced Zoom Level:", newZoom);
+    }, 100);
 
+    return () => clearTimeout(timeout);
+  }, [region.latitudeDelta]);
+
+  const gyms = rawGyms.filter((g) => g.approved);
+  const logoCutoffZoom = 10;
 
   return (
     <View style={styles.container}>
@@ -66,59 +62,62 @@ export default function MapScreen() {
         style={styles.map}
         initialRegion={region}
         showsUserLocation={true}
-        onRegionChangeComplete={(newRegion) => {
-          setRegion(newRegion);
-          // const newZoom = calculateZoomLevel(newRegion.latitudeDelta);
-          // setZoomLevel(newZoom);
-          // console.log("🔍 Zoom level:", newZoom);
+        onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
+        onPress={() => {
+          Object.values(markerRefs.current).forEach((ref) => {
+            try {
+              ref?.hideCallout();
+            } catch (e) {
+              console.warn("Failed to hide callout", e);
+            }
+          });
         }}
       >
-          {gyms.map((gym) => {
-            const logoSource =
-              gym.approved && gym.logo
-                ? { uri: gym.logo }
-                : require("../../assets/fallbacks/BJJ_White_Belt.svg.png");
+        {gyms.map((gym) => {
+          const logoSource =
+            gym.approved && gym.logo
+              ? { uri: gym.logo }
+              : require("../../assets/fallbacks/BJJ_White_Belt.svg.png");
 
-                  const markerSize = getMarkerSize();
+          const markerSize = getMarkerSize();
 
-                  return (
-                    <Marker
-                    key={`${gym.id}-${zoomLevel >= logoCutoffZoom ? 'logo' : 'dot'}`}
-                      coordinate={{
-                        latitude: gym.latitude,
-                        longitude: gym.longitude,
-                      }}
-                      title={gym.name}
-                    >
-                      {/* Make sure there's always a valid child */}
-                      {zoomLevel >= logoCutoffZoom ? (
-                        <Image
-                          source={logoSource}
-                          style={[styles.markerImage, markerSize]}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <View style={styles.dotMarker} />
-                      )}
+          return (
+            <Marker
+              key={gym.id}
+              ref={(ref) => (markerRefs.current[gym.id] = ref)}
+              coordinate={{
+                latitude: gym.latitude,
+                longitude: gym.longitude,
+              }}
+              onPress={() => markerRefs.current[gym.id]?.showCallout()}
+            >
+              {zoomLevel >= logoCutoffZoom ? (
+                <Image
+                  source={logoSource}
+                  style={[styles.markerImage, markerSize]}
+                  resizeMode="contain"
+                />
+              ) : (
+                <View style={styles.dotMarker} />
+              )}
 
-
-                      <Callout>
-                        <View style={styles.calloutContainer}>
-                          <Text style={styles.gymName}>{gym.name}</Text>
-                          {gym.openMatTimes?.map((time, index) => (
-                            <Text key={index} style={styles.gymTime}>
-                              {time}
-                            </Text>
-                          ))}
-                        </View>
-                      </Callout>
-                    </Marker>
-                  );
-                })}
-                </MapView>
-              </View>
-            );
-          }
+              <Callout>
+                <View style={styles.calloutContainer}>
+                  <Text style={styles.gymName}>{gym.name}</Text>
+                  {gym.openMatTimes?.map((time, index) => (
+                    <Text key={index} style={styles.gymTime}>
+                      {time}
+                    </Text>
+                  ))}
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
+      </MapView>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -165,8 +164,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
   },
-
-  // 🔵 Add this here 👇
   dotMarker: {
     width: 12,
     height: 12,
@@ -174,6 +171,5 @@ const styles = StyleSheet.create({
     backgroundColor: "blue",
     borderWidth: 1,
     borderColor: "white",
-  },  
+  },
 });
-
