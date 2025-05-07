@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -26,6 +26,17 @@ export default function MapScreen() {
   });
 
   const [zoomLevel, setZoomLevel] = useState(10);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const newZoom = calculateZoomLevel(region.latitudeDelta);
+      setZoomLevel(newZoom);
+      console.log("🔁 Debounced Zoom Level:", newZoom);
+    }, 100); // Debounce delay (100ms)
+  
+    return () => clearTimeout(timeout);
+  }, [region.latitudeDelta]);
+  
 
   const calculateZoomLevel = (latitudeDelta: number) => {
     const zoom = Math.round(Math.log(360 / latitudeDelta) / Math.LN2);
@@ -57,48 +68,57 @@ export default function MapScreen() {
         showsUserLocation={true}
         onRegionChangeComplete={(newRegion) => {
           setRegion(newRegion);
-          setZoomLevel(calculateZoomLevel(newRegion.latitudeDelta));
+          // const newZoom = calculateZoomLevel(newRegion.latitudeDelta);
+          // setZoomLevel(newZoom);
+          // console.log("🔍 Zoom level:", newZoom);
         }}
       >
-        {gyms.map((gym) => {
-          const isFallback = !gym.logo;
-          const logoSource = isFallback
-            ? fallbackImages[4]
-            : { uri: gym.logo };
+          {gyms.map((gym) => {
+            const logoSource =
+              gym.approved && gym.logo
+                ? { uri: gym.logo }
+                : require("../../assets/fallbacks/BJJ_White_Belt.svg.png");
 
-          const markerSize = getMarkerSize();
+                  const markerSize = getMarkerSize();
 
-          return (
-<Marker
-  key={gym.id}
-  coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
-  title={gym.name}
->
-  {zoomLevel >= logoCutoffZoom ? (
-    <Image
-      source={logoSource}
-      style={[styles.markerImage, getMarkerSize()]}
-      resizeMode="contain"
-    />
-  ) : (
-    <View style={styles.dotMarker} />
-  )}
-  <Callout>
-    <View style={styles.calloutContainer}>
-      <Text style={styles.gymName}>{gym.name}</Text>
-      {gym.openMatTimes?.map((time, index) => (
-        <Text key={index} style={styles.gymTime}>{time}</Text>
-      ))}
-    </View>
-  </Callout>
-</Marker>
+                  return (
+                    <Marker
+                    key={`${gym.id}-${zoomLevel >= logoCutoffZoom ? 'logo' : 'dot'}`}
+                      coordinate={{
+                        latitude: gym.latitude,
+                        longitude: gym.longitude,
+                      }}
+                      title={gym.name}
+                    >
+                      {/* Make sure there's always a valid child */}
+                      {zoomLevel >= logoCutoffZoom ? (
+                        <Image
+                          source={logoSource}
+                          style={[styles.markerImage, markerSize]}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <View style={styles.dotMarker} />
+                      )}
 
-          );
-        })}
-      </MapView>
-    </View>
-  );
-}
+
+                      <Callout>
+                        <View style={styles.calloutContainer}>
+                          <Text style={styles.gymName}>{gym.name}</Text>
+                          {gym.openMatTimes?.map((time, index) => (
+                            <Text key={index} style={styles.gymTime}>
+                              {time}
+                            </Text>
+                          ))}
+                        </View>
+                      </Callout>
+                    </Marker>
+                  );
+                })}
+                </MapView>
+              </View>
+            );
+          }
 
 const styles = StyleSheet.create({
   container: {
@@ -154,6 +174,6 @@ const styles = StyleSheet.create({
     backgroundColor: "blue",
     borderWidth: 1,
     borderColor: "white",
-  },
+  },  
 });
 

@@ -1,5 +1,5 @@
 // screens/AddGymScreen.tsx
-import React, { useState } from 'react';
+import React, { useState} from 'react';
 import {
   View,
   TextInput,
@@ -17,6 +17,7 @@ type AddGymScreenProps = {
 };
 
 const AddGymScreen = ({ onAddGym }: AddGymScreenProps) => {
+
   const [formData, setFormData] = useState({
     name: '',
     city: '',
@@ -30,6 +31,7 @@ const AddGymScreen = ({ onAddGym }: AddGymScreenProps) => {
     phone: '',
     approved: false,
   });
+  
 
   const handleChange = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
