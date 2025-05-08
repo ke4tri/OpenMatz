@@ -69,7 +69,13 @@ export default function GymMarker({
       </View>
 
       <Callout tooltip={false}>
-        <View style={{ backgroundColor: "white", padding: 10, borderRadius: 8 }}>
+      <View style={{
+      backgroundColor: "white",
+      padding: 10,
+      borderRadius: 8,
+      minWidth: 180,
+      maxWidth: 250,
+    }}>
           <Text style={{ fontWeight: "bold" }}>{gym.name}</Text>
           {gym.openMatTimes?.map((time: string, index: number) => (
             <Text key={index}>{time}</Text>
