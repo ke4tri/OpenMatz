@@ -8,6 +8,8 @@ import {
 import MapView, { Marker, Callout, Region } from "react-native-maps";
 import { Link } from "expo-router";
 import rawGyms from "../../assets/gyms.json";
+import GymMarker from "../../components/GymMarker";
+
 
 const fallbackImages = [
   require("../../assets/fallbacks/BlackBelt.png"),
@@ -82,36 +84,18 @@ export default function MapScreen() {
           const markerSize = getMarkerSize();
 
           return (
-            <Marker
-              key={gym.id}
-              ref={(ref) => (markerRefs.current[gym.id] = ref)}
-              coordinate={{
-                latitude: gym.latitude,
-                longitude: gym.longitude,
-              }}
-              onPress={() => markerRefs.current[gym.id]?.showCallout()}
-            >
-              {zoomLevel >= logoCutoffZoom ? (
-                <Image
-                  source={logoSource}
-                  style={[styles.markerImage, markerSize]}
-                  resizeMode="contain"
-                />
-              ) : (
-                <View style={styles.dotMarker} />
-              )}
+<GymMarker
+  key={gym.id}
+  gym={gym}
+  logoSource={logoSource}
+  markerSize={markerSize}
+  zoomLevel={zoomLevel}
+  logoCutoffZoom={logoCutoffZoom}
+  markerRef={(ref) => {
+    markerRefs.current[gym.id] = ref;
+  }}
+/>
 
-              <Callout>
-                <View style={styles.calloutContainer}>
-                  <Text style={styles.gymName}>{gym.name}</Text>
-                  {gym.openMatTimes?.map((time, index) => (
-                    <Text key={index} style={styles.gymTime}>
-                      {time}
-                    </Text>
-                  ))}
-                </View>
-              </Callout>
-            </Marker>
           );
         })}
       </MapView>
