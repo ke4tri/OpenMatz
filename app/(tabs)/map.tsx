@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, ComponentRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Image,
+  Button,
 } from "react-native";
-import MapView, { Marker, Callout, Region } from "react-native-maps";
-import { Link } from "expo-router";
+import MapView, { Marker as MapMarker, Callout, Region } from "react-native-maps";
+import { Link, useRouter } from "expo-router";
 import rawGyms from "../../assets/gyms.json";
 import GymMarker from "../../components/GymMarker";
-
 
 const fallbackImages = [
   require("../../assets/fallbacks/BlackBelt.png"),
@@ -28,7 +28,8 @@ export default function MapScreen() {
   });
 
   const [zoomLevel, setZoomLevel] = useState(10);
-  const markerRefs = useRef<{ [key: string]: Marker | null }>({});
+  const markerRefs = useRef<{ [key: string]: ComponentRef<typeof MapMarker> | null }>({});
+  const router = useRouter();
 
   const calculateZoomLevel = (latitudeDelta: number) => {
     const zoom = Math.round(Math.log(360 / latitudeDelta) / Math.LN2);
@@ -60,6 +61,18 @@ export default function MapScreen() {
     <View style={styles.container}>
       <Link href="/drawer/map" asChild></Link>
 
+      <Button
+        title="Edit First Gym"
+        onPress={() =>
+          router.push({
+            pathname: "/add-gym",
+            params: {
+              existingGym: JSON.stringify(gyms[0]), // ✅ must be single object
+            },
+          })
+        }
+      />
+
       <MapView
         style={styles.map}
         initialRegion={region}
@@ -84,18 +97,17 @@ export default function MapScreen() {
           const markerSize = getMarkerSize();
 
           return (
-<GymMarker
-  key={gym.id}
-  gym={gym}
-  logoSource={logoSource}
-  markerSize={markerSize}
-  zoomLevel={zoomLevel}
-  logoCutoffZoom={logoCutoffZoom}
-  markerRef={(ref) => {
-    markerRefs.current[gym.id] = ref;
-  }}
-/>
-
+            <GymMarker
+              key={gym.id}
+              gym={gym}
+              logoSource={logoSource}
+              markerSize={markerSize}
+              zoomLevel={zoomLevel}
+              logoCutoffZoom={logoCutoffZoom}
+              markerRef={(ref) => {
+                markerRefs.current[gym.id] = ref;
+              }}
+            />
           );
         })}
       </MapView>
@@ -104,12 +116,8 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  map: { flex: 1 },
   markerImage: {
     width: 60,
     height: 20,
@@ -122,32 +130,8 @@ const styles = StyleSheet.create({
     minWidth: 200,
     maxWidth: 250,
   },
-  gymName: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  gymTime: {
-    fontSize: 14,
-  },
-  hamburger: {
-    position: "absolute",
-    top: 50,
-    left: 20,
-    zIndex: 1,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  hamburgerText: {
-    fontSize: 24,
-    fontWeight: "bold",
-  },
+  gymName: { fontWeight: "bold", fontSize: 16, marginBottom: 5 },
+  gymTime: { fontSize: 14 },
   dotMarker: {
     width: 12,
     height: 12,

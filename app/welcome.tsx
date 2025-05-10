@@ -1,4 +1,3 @@
-// app/index.tsx
 import { useEffect } from "react";
 import { View, Image, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
@@ -8,10 +7,8 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log("✅ Redirecting to /map");
-      router.replace("/(tabs)/map");
-    }, 2500); // Show splash for 2.5 seconds
-
+      router.replace("/(tabs)/map"); // This navigates to your real app
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -27,6 +24,14 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#000" },
-  logo: { width: 260, height: 260 },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logo: {
+    width: 250,
+    height: 250,
+  },
 });

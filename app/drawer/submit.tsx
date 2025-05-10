@@ -12,12 +12,16 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Pressable
 } from "react-native";
 import gymsData from "../../assets/gyms.json";
 import type { Gym, GymForm } from "../types";
+import { useRouter } from "expo-router";
 
 export default function SubmitScreen() {
   const [gyms, setGyms] = useState<Gym[]>(gymsData as Gym[]);
+
+const router = useRouter();
 
   const [formData, setFormData] = useState<GymForm>({
     id: "",
@@ -94,6 +98,7 @@ export default function SubmitScreen() {
       phone: formData.phone,
       approved: formData.approved,
     };
+    
 
     const updatedGyms = [...gyms, newGym];
     setGyms(updatedGyms);
@@ -117,6 +122,7 @@ export default function SubmitScreen() {
 
     refs.name.current?.focus();
   };
+  
 
   return (
     <KeyboardAvoidingView
@@ -130,6 +136,11 @@ export default function SubmitScreen() {
         keyboardDismissMode="interactive"
       >
         <Text style={styles.title}>Submit a Gym</Text>
+
+<Pressable onPress={() => router.back()} style={styles.backButton}>
+  <Text style={styles.backText}>← Back to Map</Text>
+</Pressable>
+
 
         <TextInput
           ref={refs.name}
@@ -308,5 +319,16 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  backButton: {
+    padding: 10,
+    backgroundColor: "#ddd",
+    borderRadius: 6,
+    marginBottom: 15,
+    alignSelf: "flex-start",
+  },
+  backText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

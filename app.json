@@ -26,15 +26,19 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "splash": {
+      "image": "./assets/appLogo/OpenMatz.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1c1c1c"
+    },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/appLogo/OpenMatz.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#1c1c1c"
         }
       ],
       [
