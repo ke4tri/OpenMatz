@@ -1,3 +1,4 @@
+// app/add-gym.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -8,10 +9,11 @@ import {
   Switch,
   Text,
   Alert,
+  Pressable,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import type { Gym } from "../types";
+import type { Gym } from "./types";
 
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
 
@@ -26,16 +28,6 @@ const AddGymScreen = () => {
     }
   } catch (e) {
     console.warn("Failed to parse existingGym:", e);
-  }
-
-  if (!existingGym || typeof existingGym.latitude !== "number") {
-    return (
-      <View style={{ padding: 20 }}>
-        <Text style={{ color: "red" }}>
-          Missing or invalid gym data passed.
-        </Text>
-      </View>
-    );
   }
 
   const [formData, setFormData] = useState({
@@ -56,7 +48,7 @@ const AddGymScreen = () => {
   });
 
   useEffect(() => {
-    if (existingGym) {
+    if (existingGym && !formData.id) {
       setFormData(prev => ({
         ...prev,
         ...existingGym,
@@ -64,8 +56,8 @@ const AddGymScreen = () => {
         longitude: existingGym.longitude?.toString() || "",
         openMatTimes: (existingGym.openMatTimes || []).join(", "),
         approved: false,
-        pendingUpdate: !!existingGym.id,
-        updatedFromId: existingGym.id || "",
+        pendingUpdate: true,
+        updatedFromId: existingGym.id ?? "",
       }));
     }
   }, [existingGym]);
@@ -135,6 +127,9 @@ const AddGymScreen = () => {
       </View>
 
       <Button title="Submit Gym" onPress={handleSubmit} />
+      <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Text style={styles.backText}>← Back to Map</Text>
+      </Pressable>
     </ScrollView>
   );
 };
@@ -153,6 +148,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginVertical: 10,
+  },
+  backButton: {
+    marginBottom: 20,
+    padding: 10,
+    backgroundColor: "#eee",
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
+  backText: {
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
 
