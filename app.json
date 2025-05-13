@@ -27,7 +27,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "splash": {
-      "image": "./assets/appLogo/OpenMatz.png",
+      "image": "./assets/appLogo/OpenMats_Color.png",
       "resizeMode": "contain",
       "backgroundColor": "#1c1c1c"
     },
@@ -36,7 +36,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/appLogo/OpenMatz.png",
+          "image": "./assets/appLogo/OpenMats_Color.png",
           "resizeMode": "contain",
           "backgroundColor": "#1c1c1c"
         }

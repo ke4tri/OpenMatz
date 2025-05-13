@@ -1,23 +1,21 @@
-import React, { useState, useEffect, useRef, ComponentRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Button,
-} from "react-native";
-import MapView, { Marker as MapMarker, Callout, Region } from "react-native-maps";
-import { Link, useRouter } from "expo-router";
-import rawGyms from "../../assets/gyms.json";
+// app/(tabs)/map.tsx
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import { View, StyleSheet } from "react-native";
+import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
+import rawGyms from "../../assets/gyms.json";
 
-const fallbackImages = [
-  require("../../assets/fallbacks/BlackBelt.png"),
-  require("../../assets/fallbacks/BrownBelt.png"),
-  require("../../assets/fallbacks/coral.png"),
-  require("../../assets/fallbacks/BJJ_White_Belt.svg.png"),
-  require("../../assets/fallbacks/WhiteBelt.png"),
-];
+const LOGO_ZOOM_CUTOFF = 0.2;
+
+// ✅ Custom marker type just for controlling the callout
+type MarkerRef = {
+  hideCallout: () => void;
+};
 
 export default function MapScreen() {
   const [region, setRegion] = useState<Region>({
@@ -26,58 +24,52 @@ export default function MapScreen() {
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
+  const markerRefs = useRef<{ [key: string]: MarkerRef | null }>({});
+  const gyms = useMemo(() => rawGyms.filter((g) => g.approved), []);
 
-  const [zoomLevel, setZoomLevel] = useState(10);
-  const markerRefs = useRef<{ [key: string]: ComponentRef<typeof MapMarker> | null }>({});
-  const router = useRouter();
+  // #1: only update region at end of gesture
+  const onRegionChangeComplete = useCallback((r: Region) => {
+    setRegion(r);
+  }, []);
 
-  const calculateZoomLevel = (latitudeDelta: number) => {
-    const zoom = Math.round(Math.log(360 / latitudeDelta) / Math.LN2);
-    return Math.max(1, Math.min(zoom, 20));
-  };
+  // decide whether to show logos (true) or blue dots (false)
+  const showLogos = region.longitudeDelta < LOGO_ZOOM_CUTOFF;
 
-  const getMarkerSize = () => {
+  // sizing logic stays the same
+  const markerSize = useMemo(() => {
     const zoomRatio = 0.1 / region.latitudeDelta;
     const clamped = Math.min(Math.max(zoomRatio, 2.5), 8);
     const width = 60 * clamped;
     const height = width * 0.3;
     return { width, height };
-  };
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const newZoom = calculateZoomLevel(region.latitudeDelta);
-      setZoomLevel(newZoom);
-      console.log("🔁 Debounced Zoom Level:", newZoom);
-    }, 100);
-
-    return () => clearTimeout(timeout);
   }, [region.latitudeDelta]);
 
-  const gyms = rawGyms.filter((g) => g.approved);
-  const logoCutoffZoom = 10;
+  // #2: memoize your `<GymMarker />` list so React only rebuilds it
+  const markers = useMemo(() => {
+    return gyms.map((gym) => {
+      const markerRefCallback = (ref: MarkerRef | null) => {
+        markerRefs.current[gym.id] = ref;
+      };
+
+      return (
+        <GymMarker
+          key={`${gym.id}-${showLogos ? "logo" : "dot"}`}
+          gym={gym}
+          markerSize={markerSize}
+          showLogo={showLogos}
+          markerRef={markerRefCallback}
+        />
+      );
+    });
+  }, [gyms, markerSize, showLogos]);
 
   return (
     <View style={styles.container}>
-      <Link href="/drawer/map" asChild></Link>
-
-      <Button
-        title="Edit First Gym"
-        onPress={() =>
-          router.push({
-            pathname: "/add-gym",
-            params: {
-              existingGym: JSON.stringify(gyms[0]), // ✅ must be single object
-            },
-          })
-        }
-      />
-
       <MapView
         style={styles.map}
         initialRegion={region}
-        showsUserLocation={true}
-        onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
+        showsUserLocation
+        onRegionChangeComplete={onRegionChangeComplete}
         onPress={() => {
           Object.values(markerRefs.current).forEach((ref) => {
             try {
@@ -88,28 +80,7 @@ export default function MapScreen() {
           });
         }}
       >
-        {gyms.map((gym) => {
-          const logoSource =
-            gym.approved && gym.logo
-              ? { uri: gym.logo }
-              : require("../../assets/fallbacks/BJJ_White_Belt.svg.png");
-
-          const markerSize = getMarkerSize();
-
-          return (
-            <GymMarker
-              key={gym.id}
-              gym={gym}
-              logoSource={logoSource}
-              markerSize={markerSize}
-              zoomLevel={zoomLevel}
-              logoCutoffZoom={logoCutoffZoom}
-              markerRef={(ref) => {
-                markerRefs.current[gym.id] = ref;
-              }}
-            />
-          );
-        })}
+        {markers}
       </MapView>
     </View>
   );
@@ -118,26 +89,4 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  markerImage: {
-    width: 60,
-    height: 20,
-    resizeMode: "contain",
-  },
-  calloutContainer: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    padding: 10,
-    minWidth: 200,
-    maxWidth: 250,
-  },
-  gymName: { fontWeight: "bold", fontSize: 16, marginBottom: 5 },
-  gymTime: { fontSize: 14 },
-  dotMarker: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "blue",
-    borderWidth: 1,
-    borderColor: "white",
-  },
 });
