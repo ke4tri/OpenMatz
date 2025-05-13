@@ -1,59 +1,33 @@
 // components/GymMarker.tsx
-import React, { useMemo } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Pressable,
-} from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Marker, Callout } from "react-native-maps";
 import { useRouter } from "expo-router";
 import type { Gym } from "../app/types";
 
 type Props = {
   gym: Gym;
-  markerSize: { width: number; height: number };
-  showLogo: boolean;
   markerRef?: (ref: any) => void;
+  onPress?: () => void;
 };
 
-const GymMarker = ({
-  gym,
-  markerSize,
-  showLogo,
-  markerRef,
-}: Props) => {
+const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
   const router = useRouter();
-  const fallbackLogo = require("../assets/fallbacks/BJJ_White_Belt.svg.png");
-
-  // pick either the real URI or the fallback
-  const logoSource = useMemo(() => {
-    return gym.logo && gym.logo.trim() !== ""
-      ? { uri: gym.logo }
-      : fallbackLogo;
-  }, [gym.logo]);
 
   return (
     <Marker
-      coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
-      title={gym.name}
       ref={markerRef}
+      coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
+      onPress={onPress}
+      pinColor="blue"
     >
-      {showLogo ? (
-        <Image
-          source={logoSource}
-          style={[styles.markerImage, markerSize]}
-          resizeMode="contain"
-        />
-      ) : (
-        <View style={styles.dotMarker} />
-      )}
+      {/* Always render blue dot */}
+      <View style={styles.dotMarker} />
 
       <Callout tooltip>
         <View style={styles.calloutContainer}>
           <Text style={styles.gymName}>{gym.name}</Text>
-          {gym.openMatTimes?.map((time: string, idx: number) => (
+          {gym.openMatTimes?.map((time, idx) => (
             <Text key={idx} style={styles.gymTime}>
               {time}
             </Text>
@@ -62,9 +36,7 @@ const GymMarker = ({
             onPress={() =>
               router.push({
                 pathname: "/add-gym",
-                params: {
-                  existingGym: JSON.stringify(gym),
-                },
+                params: { existingGym: JSON.stringify(gym) },
               })
             }
             style={styles.editButton}
@@ -75,12 +47,11 @@ const GymMarker = ({
       </Callout>
     </Marker>
   );
-};
+});
+
+export default GymMarker;
 
 const styles = StyleSheet.create({
-  markerImage: {
-    resizeMode: "contain",
-  },
   dotMarker: {
     width: 12,
     height: 12,
@@ -116,5 +87,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
-export default GymMarker;
