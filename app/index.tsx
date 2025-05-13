@@ -1,5 +1,4 @@
 // app/index.tsx
-//Where you can update the Welcom Logo
 import { useEffect } from "react";
 import { View, Image, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
