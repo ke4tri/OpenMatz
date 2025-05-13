@@ -15,7 +15,7 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require("../assets/appLogo/OpenMatz.png")}
+        source={require("../assets/appLogo/OpenMats_Color.png")}
         style={styles.logo}
         resizeMode="contain"
       />

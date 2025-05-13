@@ -1,2 +1,4 @@
 {
+    "workbench.statusBar.visible": true,
+    "editor.minimap.enabled": false
 }

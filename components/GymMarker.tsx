@@ -1,87 +1,120 @@
-import React from "react";
-import { View, Text, Image } from "react-native";
+// components/GymMarker.tsx
+import React, { useMemo } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Pressable,
+} from "react-native";
 import { Marker, Callout } from "react-native-maps";
+import { useRouter } from "expo-router";
+import type { Gym } from "../app/types";
 
-type GymMarkerProps = {
-  gym: any;
-  logoSource: any;
-  markerSize: { width: number; height: number }; // still passed in but not applied to layout
-  zoomLevel: number;
-  logoCutoffZoom: number;
+type Props = {
+  gym: Gym;
+  markerSize: { width: number; height: number };
+  showLogo: boolean;
+  markerRef?: (ref: any) => void;
 };
 
-export default function GymMarker({
+const GymMarker = ({
   gym,
-  logoSource,
   markerSize,
-  zoomLevel,
-  logoCutoffZoom,
-}: GymMarkerProps) {
-  const markerDimensions = {
-    width: 60,
-    height: 20,
-  };
+  showLogo,
+  markerRef,
+}: Props) => {
+  const router = useRouter();
+  const fallbackLogo = require("../assets/fallbacks/BJJ_White_Belt.svg.png");
+
+  // pick either the real URI or the fallback
+  const logoSource = useMemo(() => {
+    return gym.logo && gym.logo.trim() !== ""
+      ? { uri: gym.logo }
+      : fallbackLogo;
+  }, [gym.logo]);
 
   return (
     <Marker
-      key={gym.id}
-      coordinate={{
-        latitude: gym.latitude,
-        longitude: gym.longitude,
-      }}
-      anchor={{ x: 0.5, y: 0.5 }} // keeps marker centered on point
+      coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
+      title={gym.name}
+      ref={markerRef}
     >
-      {/* Wrapper view with fixed size and center alignment */}
-      <View
-        style={[
-          markerDimensions,
-          {
-            justifyContent: "center",
-            alignItems: "center",
-          },
-        ]}
-      >
-        {/* Logo Image with scaling transform, not layout resize */}
+      {showLogo ? (
         <Image
           source={logoSource}
-          style={{
-            width: "100%",
-            height: "100%",
-            opacity: zoomLevel >= logoCutoffZoom ? 1 : 0,
-            transform: [{ scale: zoomLevel / 10 }],
-          }}
+          style={[styles.markerImage, markerSize]}
           resizeMode="contain"
         />
+      ) : (
+        <View style={styles.dotMarker} />
+      )}
 
-        {/* Blue dot centered in the same fixed space */}
-        <View
-          style={{
-            position: "absolute",
-            width: 12,
-            height: 12,
-            borderRadius: 6,
-            backgroundColor: "blue",
-            borderWidth: 1,
-            borderColor: "white",
-            opacity: zoomLevel < logoCutoffZoom ? 1 : 0,
-          }}
-        />
-      </View>
-
-      <Callout tooltip={false}>
-      <View style={{
-      backgroundColor: "white",
-      padding: 10,
-      borderRadius: 8,
-      minWidth: 180,
-      maxWidth: 250,
-    }}>
-          <Text style={{ fontWeight: "bold" }}>{gym.name}</Text>
-          {gym.openMatTimes?.map((time: string, index: number) => (
-            <Text key={index}>{time}</Text>
+      <Callout tooltip>
+        <View style={styles.calloutContainer}>
+          <Text style={styles.gymName}>{gym.name}</Text>
+          {gym.openMatTimes?.map((time: string, idx: number) => (
+            <Text key={idx} style={styles.gymTime}>
+              {time}
+            </Text>
           ))}
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/add-gym",
+                params: {
+                  existingGym: JSON.stringify(gym),
+                },
+              })
+            }
+            style={styles.editButton}
+          >
+            <Text style={styles.editButtonText}>📝 Edit Info</Text>
+          </Pressable>
         </View>
       </Callout>
     </Marker>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  markerImage: {
+    resizeMode: "contain",
+  },
+  dotMarker: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "blue",
+    borderWidth: 1,
+    borderColor: "white",
+  },
+  calloutContainer: {
+    backgroundColor: "white",
+    padding: 10,
+    borderRadius: 8,
+    minWidth: 200,
+    maxWidth: 250,
+  },
+  gymName: {
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  gymTime: {
+    fontSize: 14,
+  },
+  editButton: {
+    marginTop: 10,
+    backgroundColor: "#eee",
+    padding: 8,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
+  editButtonText: {
+    fontWeight: "500",
+    fontSize: 14,
+  },
+});
+
+export default GymMarker;
