@@ -1,5 +1,7 @@
 import { View, Text, Image, StyleSheet, Linking, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 
 export default function GymDetailsScreen() {
   const { gym } = useLocalSearchParams();
@@ -27,34 +29,75 @@ export default function GymDetailsScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {logo ? (
-        <Image source={{ uri: logo }} style={styles.logo} resizeMode="contain" />
-      ) : (
-        <Text style={styles.logoPlaceholder}>No logo available</Text>
-      )}
-      <Text style={styles.name}>{name}</Text>
-      {phone && (
-        <Text style={styles.link} onPress={() => Linking.openURL(`tel:${phone}`)}>
-          {phone}
-        </Text>
-      )}
-      {email && (
-        <Text style={styles.link} onPress={() => Linking.openURL(`mailto:${email}`)}>
-          {email}
-        </Text>
-      )}
-      <Text style={styles.backButtonCentered} onPress={() => router.back()}>Back to Map</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.name}>{parsed.name}</Text>
+  
+        {parsed.logo && (
+          <Image
+            source={{ uri: parsed.logo }}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        )}
+  
+        {parsed.phone && (
+          <Text
+            style={styles.detail}
+            onPress={() => Linking.openURL(`tel:${parsed.phone}`)}
+          >
+            📞 {parsed.phone}
+          </Text>
+        )}
+  
+        {parsed.email && (
+          <Text
+            style={styles.detail}
+            onPress={() => Linking.openURL(`mailto:${parsed.email}`)}
+          >
+            ✉️ {parsed.email}
+          </Text>
+        )}
+  
+        {parsed.address && (
+          <Text style={styles.detail}>📍 {parsed.address}</Text>
+        )}
+  
+        {parsed.website && (
+          <Text
+            style={styles.detail}
+            onPress={() => Linking.openURL(parsed.website)}
+          >
+            🌐 {parsed.website}
+          </Text>
+        )}
+  
+        <Text style={styles.sectionTitle}>Class Times:</Text>
+        {parsed.openMatTimes?.length ? (
+          parsed.openMatTimes.map((time: string, idx: number) => (
+            <Text key={idx} style={styles.time}>
+              {time}
+            </Text>
+          ))
+        ) : (
+          <Text style={styles.time}>None listed</Text>
+        )}
 
-    </ScrollView>
+        <Text style={styles.backButton} onPress={() => router.back()}>
+          Back to Map
+        </Text>
+  
+      </ScrollView>
+    </SafeAreaView>
   );
+  
+  
 }
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
     padding: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f0f0f0",
   },
   center: {
     flex: 1,
@@ -64,17 +107,33 @@ const styles = StyleSheet.create({
   logo: {
     width: 200,
     height: 100,
-    marginBottom: 20,
+    alignSelf: "center",
+    marginBottom: 15,
   },
   logoPlaceholder: {
     marginVertical: 20,
     fontStyle: "italic",
     color: "#888",
   },
+  backButton: {
+    fontSize: 16,
+    color: 'blue',
+    textDecorationLine: 'underline',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  
   name: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  detail: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: "blue",
+    textDecorationLine: "underline",
   },
   link: {
     fontSize: 18,
@@ -89,6 +148,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
     alignSelf: "center",
+  },  
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 20,
+    marginBottom: 8,
+  },  time: {
+    fontSize: 15,
+    marginBottom: 4,
   },
   
 });
