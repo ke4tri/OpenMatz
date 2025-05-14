@@ -32,7 +32,7 @@ const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
               {time}
             </Text>
           ))}
-          <Pressable
+          {/* <Pressable
             onPress={() =>
               router.push({
                 pathname: "/add-gym",
@@ -42,7 +42,7 @@ const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
             style={styles.editButton}
           >
             <Text style={styles.editButtonText}>📝 Edit Info</Text>
-          </Pressable>
+          </Pressable> */}
         </View>
       </Callout>
     </Marker>
