@@ -83,6 +83,19 @@ export default function GymDetailsScreen() {
           <Text style={styles.time}>None listed</Text>
         )}
 
+          <Text
+            style={styles.updateButton}
+            onPress={() =>
+              router.push({
+                pathname: "/add-gym",
+                params: { existingGym: JSON.stringify(parsed) },
+              })
+            }
+            >
+              Update This Gym
+          </Text>
+
+
         <Text style={styles.backButton} onPress={() => router.back()}>
           Back to Map
         </Text>
@@ -154,9 +167,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 20,
     marginBottom: 8,
-  },  time: {
+  }, 
+  time: {
     fontSize: 15,
     marginBottom: 4,
+  },
+  updateButton: {
+    fontSize: 16,
+    color: "blue",
+    textDecorationLine: "underline",
+    marginTop: 30,
+    textAlign: "center",
   },
   
 });
