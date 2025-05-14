@@ -6,7 +6,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme} children={undefined}>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       {/* 🔰 Ensure Stack is inside ThemeProvider so it receives children */}
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

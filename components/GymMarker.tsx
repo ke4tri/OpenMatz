@@ -1,9 +1,10 @@
 // components/GymMarker.tsx
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { Marker, Callout } from "react-native-maps";
+import { Marker, Callout, CalloutSubview } from "react-native-maps";
 import { useRouter } from "expo-router";
 import type { Gym } from "../app/types";
+
 
 type Props = {
   gym: Gym;
@@ -25,29 +26,35 @@ const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
       <View style={styles.dotMarker} />
 
       <Callout tooltip>
-        <View style={styles.calloutContainer}>
-          <Text style={styles.gymName}>{gym.name}</Text>
-          {gym.openMatTimes?.map((time, idx) => (
-            <Text key={idx} style={styles.gymTime}>
-              {time}
-            </Text>
-          ))}
-          {/* <Pressable
-            onPress={() =>
-              router.push({
-                pathname: "/add-gym",
-                params: { existingGym: JSON.stringify(gym) },
-              })
-            }
-            style={styles.editButton}
-          >
-            <Text style={styles.editButtonText}>📝 Edit Info</Text>
-          </Pressable> */}
-        </View>
-      </Callout>
-    </Marker>
-  );
-});
+  <View style={styles.calloutContainer}>
+    {/* BUTTON */}
+    <CalloutSubview
+      onPress={() => {
+        console.log("Gym Info button pressed", gym.name);
+        router.push({
+          pathname: "/screens/gym-details",
+          params: { gym: JSON.stringify(gym) },
+        });
+      }}
+    >
+      <View style={styles.button}>
+        <Text style={styles.buttonText}>Gym Info</Text>
+      </View>
+    </CalloutSubview>
+
+    {/* INFO */}
+    <View style={styles.info}>
+      <Text style={styles.name}>{gym.name}</Text>
+      {gym.openMatTimes?.map((time, idx) => (
+        <Text key={idx} style={styles.time}>{time}</Text>
+      ))}
+    </View>
+  </View>
+</Callout>
+
+          </Marker>
+        );
+      });
 
 export default GymMarker;
 
@@ -61,29 +68,75 @@ const styles = StyleSheet.create({
     borderColor: "white",
   },
   calloutContainer: {
-    backgroundColor: "white",
+    backgroundColor: 'white',
     padding: 10,
     borderRadius: 8,
+    borderColor: 'red',        // for debugging
+    borderWidth: 1,
     minWidth: 200,
-    maxWidth: 250,
+    maxWidth: 300,
+    flexDirection: 'column',
+  },
+  button: {
+    backgroundColor: '#eee',
+    padding: 8,
+    borderRadius: 6,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
+  buttonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'black',
+  },
+  calloutContent: {
+    flexDirection: "column",
+    justifyContent: "space-between", // pushes button down
+    flex: 1,
+  },
+  info: {
+    backgroundColor: 'yellow',  // debug visual aid
+    paddingTop: 5,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
+    marginBottom: 5,
+  },
+  time: {
+    fontSize: 14,
+    color: 'black',
   },
   gymName: {
     fontWeight: "bold",
     fontSize: 16,
+    color: "black",
     marginBottom: 5,
   },
   gymTime: {
     fontSize: 14,
   },
   editButton: {
-    marginTop: 10,
     backgroundColor: "#eee",
     padding: 8,
     borderRadius: 6,
-    alignSelf: "flex-start",
+    alignSelf: "center",
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: "green"
   },
   editButtonText: {
-    fontWeight: "500",
     fontSize: 14,
+    fontWeight: "500",
+    color: "black",
+  },
+  gymInfoWrapper: {
+    marginTop: 5,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#ccc",
+    marginBottom: 8,
   },
 });
