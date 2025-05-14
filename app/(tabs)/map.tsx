@@ -67,3 +67,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
 });
+export const options = {
+  tabBarStyle: { display: 'none' },
+};
