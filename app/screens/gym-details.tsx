@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet, Linking, ScrollView } from "react-native";
+import { View, Text, Image, StyleSheet, Linking, ScrollView, TouchableOpacity} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -83,22 +83,23 @@ export default function GymDetailsScreen() {
           <Text style={styles.time}>None listed</Text>
         )}
 
-          <Text
-            style={styles.updateButton}
-            onPress={() =>
-              router.push({
-                pathname: "/add-gym",
-                params: { existingGym: JSON.stringify(parsed) },
-              })
-            }
-            >
-              Update This Gym
-          </Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() =>
+            router.push({
+              pathname: "/add-gym",
+              params: { existingGym: JSON.stringify(parsed) },
+            })
+          }
+        >
+          <Text style={styles.buttonText}>UPDATE</Text>
+        </TouchableOpacity>
 
 
-        <Text style={styles.backButton} onPress={() => router.back()}>
-          Back to Map
-        </Text>
+
+          <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+            <Text style={styles.buttonText}>BACK</Text>
+          </TouchableOpacity>
   
       </ScrollView>
     </SafeAreaView>
@@ -178,6 +179,21 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     marginTop: 30,
     textAlign: "center",
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginVertical: 10,
+    alignSelf: 'center',
+  },
+  
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   
 });

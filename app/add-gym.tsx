@@ -10,6 +10,7 @@ import {
   Text,
   Alert,
   Pressable,
+  TouchableOpacity,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -126,10 +127,17 @@ const AddGymScreen = () => {
         />
       </View>
 
-      <Button title="Submit Gym" onPress={handleSubmit} />
-      <Pressable onPress={() => router.back()} style={styles.backButton}>
-        <Text style={styles.backText}>← Back to Map</Text>
-      </Pressable>
+   {/* <Button title="Submit Gym" onPress={handleSubmit} /> */}
+
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <Text style={styles.submitButtonText}>SUBMIT</Text>
+      </TouchableOpacity>
+
+
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+       <Text style={styles.backButtonText}>BACK</Text>
+      </TouchableOpacity>
+
     </ScrollView>
   );
 };
@@ -150,15 +158,32 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   backButton: {
-    marginBottom: 20,
-    padding: 10,
-    backgroundColor: "#eee",
-    borderRadius: 6,
-    alignSelf: "flex-start",
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginVertical: 12, // 👈 consistent spacing above and below
   },
-  backText: {
+  backButtonText: {
+    color: 'white',
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  submitButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginVertical: 12,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 
