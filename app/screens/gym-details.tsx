@@ -50,17 +50,17 @@ export default function GymDetailsScreen() {
 
   {/* Class Times */}
   <Text style={styles.sectionTitle}>Class Times:</Text>
-  <View style={styles.classTimesWrapper}>
-    {parsed.openMatTimes?.length ? (
-      parsed.openMatTimes.map((time: string, idx: number) => (
-        <Text key={idx} style={styles.time}>
-          {time}
-        </Text>
-      ))
-    ) : (
-      <Text style={styles.time}>None listed</Text>
-    )}
-  </View>
+<View style={styles.classTimesWrapper}>
+  {parsed.classTimes?.length ? (
+    parsed.classTimes.map((time: string, idx: number) => (
+      <Text key={idx} style={styles.time}>
+        {time}
+      </Text>
+    ))
+  ) : (
+    <Text style={styles.time}>None listed</Text>
+  )}
+</View>
 
   {/* Contact Info */}
   <View style={styles.contactInfo}>
