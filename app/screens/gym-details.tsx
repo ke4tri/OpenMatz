@@ -31,76 +31,77 @@ export default function GymDetailsScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.name}>{parsed.name}</Text>
-  
-        {parsed.logo && (
-          <Image
-            source={{ uri: parsed.logo }}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        )}
-  
-        {parsed.phone && (
-          <Text
-            style={styles.detail}
-            onPress={() => Linking.openURL(`tel:${parsed.phone}`)}
-          >
-            📞 {parsed.phone}
-          </Text>
-        )}
-  
-        {parsed.email && (
-          <Text
-            style={styles.detail}
-            onPress={() => Linking.openURL(`mailto:${parsed.email}`)}
-          >
-            ✉️ {parsed.email}
-          </Text>
-        )}
-  
-        {parsed.address && (
-          <Text style={styles.detail}>📍 {parsed.address}</Text>
-        )}
-  
-        {parsed.website && (
-          <Text
-            style={styles.detail}
-            onPress={() => Linking.openURL(parsed.website)}
-          >
-            🌐 {parsed.website}
-          </Text>
-        )}
-  
-        <Text style={styles.sectionTitle}>Class Times:</Text>
-        {parsed.openMatTimes?.length ? (
-          parsed.openMatTimes.map((time: string, idx: number) => (
-            <Text key={idx} style={styles.time}>
-              {time}
-            </Text>
-          ))
-        ) : (
-          <Text style={styles.time}>None listed</Text>
-        )}
+         {/* Back Button */}
+  <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+    <Text style={styles.buttonText}>← Back to Map</Text>
+  </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() =>
-            router.push({
-              pathname: "/add-gym",
-              params: { existingGym: JSON.stringify(parsed) },
-            })
-          }
-        >
-          <Text style={styles.buttonText}>UPDATE</Text>
-        </TouchableOpacity>
+  {/* Gym Name */}
+  <Text style={styles.name}>{parsed.name}</Text>
 
+  {/* Logo */}
+  {parsed.logo && (
+    <Image
+      source={{ uri: parsed.logo }}
+      style={styles.logo}
+      resizeMode="contain"
+    />
+  )}
 
+  {/* Class Times */}
+  <Text style={styles.sectionTitle}>Class Times:</Text>
+  <View style={styles.classTimesWrapper}>
+    {parsed.openMatTimes?.length ? (
+      parsed.openMatTimes.map((time: string, idx: number) => (
+        <Text key={idx} style={styles.time}>
+          {time}
+        </Text>
+      ))
+    ) : (
+      <Text style={styles.time}>None listed</Text>
+    )}
+  </View>
 
-          <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-            <Text style={styles.buttonText}>BACK</Text>
-          </TouchableOpacity>
-  
+  {/* Contact Info */}
+  <View style={styles.contactInfo}>
+  {parsed.phone && (
+    <TouchableOpacity onPress={() => Linking.openURL(`tel:${parsed.phone}`)}>
+      <View style={styles.infoRow}>
+        <Text style={styles.infoIcon}>📞</Text>
+        <Text style={styles.infoText}>{parsed.phone}</Text>
+      </View>
+    </TouchableOpacity>
+  )}
+
+  {parsed.address && (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoIcon}>📍</Text>
+      <Text style={styles.infoText}>{parsed.address}</Text>
+    </View>
+  )}
+
+  {parsed.website && (
+    <TouchableOpacity onPress={() => Linking.openURL(parsed.website)}>
+      <View style={styles.infoRow}>
+        <Text style={styles.infoIcon}>🌐</Text>
+        <Text style={styles.infoText}>{parsed.website}</Text>
+      </View>
+    </TouchableOpacity>
+  )}
+</View>
+
+  {/* Update Button */}
+  <TouchableOpacity
+    style={styles.button}
+    onPress={() =>
+      router.push({
+        pathname: "/add-gym",
+        params: { existingGym: JSON.stringify(parsed) },
+      })
+    }
+  >
+    <Text style={styles.buttonText}>Update This Gym</Text>
+  </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -148,6 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: "blue",
     textDecorationLine: "underline",
+    textAlign: "center",
   },
   link: {
     fontSize: 18,
@@ -166,8 +168,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: 10,
+    marginBottom: 5,
+    textAlign: "center",
   }, 
   time: {
     fontSize: 15,
@@ -185,8 +188,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
-    marginVertical: 10,
     alignSelf: 'center',
+    marginVertical: 12,
   },
   
   buttonText: {
@@ -195,5 +198,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  classTimesWrapper: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  contactInfo: {
+    marginBottom: 20,
+  },
+  
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",       // allow multi-line alignment
+    backgroundColor: "#fff",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    flexWrap: "wrap",               // ensure row wraps if needed
+    maxWidth: "100%",  
+  },
+  
+  infoIcon: {
+    fontSize: 18,
+    marginRight: 10,
+  },
+  
+  infoText: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+    flexShrink: 1,
+    flexWrap: 'wrap',
+  },
+  
   
 });

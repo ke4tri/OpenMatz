@@ -38,7 +38,7 @@ const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
       }}
     >
       <View style={styles.button}>
-        <Text style={styles.buttonText}>Gym Info</Text>
+        <Text style={styles.buttonText}>More Info</Text>
       </View>
     </CalloutSubview>
 
