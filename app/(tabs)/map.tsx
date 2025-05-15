@@ -1,11 +1,9 @@
-// app/(tabs)/map.tsx
 import React, { useState, useRef, useMemo, useCallback } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Image } from "react-native";
 import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
 import rawGyms from "../../assets/gyms.json";
 
-// Ref for controlling callouts
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
 
 export default function MapScreen() {
@@ -19,12 +17,10 @@ export default function MapScreen() {
   const markerRefs = useRef<{ [id: string]: MarkerRef | null }>({});
   const gyms = useMemo(() => rawGyms.filter((g) => g.approved), []);
 
-  // update region only when user finishes interacting
   const onRegionChangeComplete = useCallback((r: Region) => {
     setRegion(r);
   }, []);
 
-  // build markers with stable keys
   const markers = useMemo(
     () =>
       gyms.map((gym) => {
@@ -32,7 +28,6 @@ export default function MapScreen() {
           markerRefs.current[gym.id] = ref;
         };
         const handlePress = () => {
-          // hide all callouts then show this one
           Object.values(markerRefs.current).forEach((r) => r?.hideCallout());
           markerRefs.current[gym.id]?.showCallout();
         };
@@ -59,14 +54,36 @@ export default function MapScreen() {
       >
         {markers}
       </MapView>
+
+      {/* Floating Logo */}
+      <View style={styles.logoWrapper}>
+        <Image
+          source={require("../../assets/appLogo/OpenMatz.png")}
+          style={styles.logo}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { flex: 1 },
+  container: {
+    flex: 1,
+  },
+  map: {
+    flex: 1,
+  },
+  logoWrapper: {
+    position: "absolute",
+    top: 40, // adjust as needed
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    zIndex: 1,
+  },
+  logo: {
+    width: 640,
+    height: 160,
+    resizeMode: "contain",
+  },
 });
-export const options = {
-  tabBarStyle: { display: 'none' },
-};
