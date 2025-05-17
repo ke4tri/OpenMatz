@@ -1,18 +1,18 @@
-// Full updated code for app/add-gym.tsx with logo rendering at top of form
-
 import React, { useState, useEffect } from "react";
 import {
   View,
   TextInput,
   StyleSheet,
   ScrollView,
-  Switch,
   Text,
   Alert,
   TouchableOpacity,
   Image,
+  Dimensions,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
+import * as Location from "expo-location";
+import MapView, { Marker, Region } from "react-native-maps";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { Gym } from "./types";
 
@@ -28,9 +28,10 @@ const validateEmail = (email: string) =>
 const validatePhone = (phone: string) =>
   /^\+?[0-9\s\-().]{7,}$/.test(phone.replace(/\D/g, ""));
 
-const AddGymScreen = () => {
+const UpdateGymScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const [region, setRegion] = useState<Region | null>(null);
 
   let existingGym: Partial<Gym> | null = null;
   try {
@@ -53,8 +54,7 @@ const AddGymScreen = () => {
     address: "",
     email: "",
     phone: "",
-    approved: false,
-    pendingUpdate: false,
+    pendingUpdate: true, // Hardcoded
     updatedFromId: "",
   });
 
@@ -68,12 +68,38 @@ const AddGymScreen = () => {
         latitude: existingGym.latitude?.toString() || "",
         longitude: existingGym.longitude?.toString() || "",
         openMatTimes: (existingGym.openMatTimes || []).join(", "),
-        approved: false,
         pendingUpdate: true,
         updatedFromId: existingGym.id ?? "",
       }));
     }
   }, [existingGym]);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert("Permission denied", "Location permission is needed to set the gym location.");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      const lat = existingGym?.latitude || location.coords.latitude;
+      const lon = existingGym?.longitude || location.coords.longitude;
+
+      setRegion({
+        latitude: lat,
+        longitude: lon,
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        latitude: lat.toString(),
+        longitude: lon.toString(),
+      }));
+    })();
+  }, []);
 
   const handleChange = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -144,7 +170,7 @@ const AddGymScreen = () => {
       </View>
 
       {Object.entries(formData).map(([key, val]) => {
-        if (["approved", "pendingUpdate", "updatedFromId", "id"].includes(key)) return null;
+        if (["approved","pendingUpdate", "updatedFromId", "id", "latitude", "longitude"].includes(key)) return null;
         return (
           <View key={key}>
             <TextInput
@@ -159,6 +185,35 @@ const AddGymScreen = () => {
           </View>
         );
       })}
+
+      {region && (
+        <View style={styles.mapWrapper}>
+          <Text style={styles.mapInstruction}>📍 Hold and drag the red pin to adjust the gym location.</Text>
+          <MapView
+            style={styles.map}
+            region={region}
+            onRegionChangeComplete={setRegion}
+          >
+            <Marker
+              coordinate={{
+                latitude: parseFloat(formData.latitude),
+                longitude: parseFloat(formData.longitude),
+              }}
+              draggable
+              pinColor="red"
+              onDragEnd={(e) => {
+                const { latitude, longitude } = e.nativeEvent.coordinate;
+                setFormData(prev => ({
+                  ...prev,
+                  latitude: latitude.toString(),
+                  longitude: longitude.toString(),
+                }));
+              }}
+            />
+          </MapView>
+          <Text style={styles.coordText}>Lat: {formData.latitude} | Lon: {formData.longitude}</Text>
+        </View>
+      )}
 
       <TouchableOpacity
         style={[styles.submitButton, Object.values(validationErrors).some(Boolean) && { backgroundColor: "#aaa" }]}
@@ -197,11 +252,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 5,
   },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginVertical: 10,
+  mapWrapper: {
+    marginVertical: 15,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  mapInstruction: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 8,
+    color: "#555",
+  },
+  map: {
+    width: Dimensions.get("window").width - 40,
+    height: 200,
+  },
+  coordText: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 6,
+    color: "#666",
   },
   backButton: {
     backgroundColor: '#007AFF',
@@ -241,4 +311,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddGymScreen;
+export default UpdateGymScreen;
