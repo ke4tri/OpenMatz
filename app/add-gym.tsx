@@ -1,22 +1,32 @@
-// app/add-gym.tsx
+// Full updated code for app/add-gym.tsx with logo rendering at top of form
+
 import React, { useState, useEffect } from "react";
 import {
   View,
   TextInput,
-  Button,
   StyleSheet,
   ScrollView,
   Switch,
   Text,
   Alert,
-  Pressable,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { Gym } from "./types";
 
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
+const fallbackLogo = require("../assets/fallbacks/BJJ_White_Belt.svg.png");
+
+const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
+
+const validateEmail = (email: string) =>
+  /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) &&
+  !shadyEmailDomains.some((d) => email.toLowerCase().includes(d));
+
+const validatePhone = (phone: string) =>
+  /^\+?[0-9\s\-().]{7,}$/.test(phone.replace(/\D/g, ""));
 
 const AddGymScreen = () => {
   const router = useRouter();
@@ -48,6 +58,8 @@ const AddGymScreen = () => {
     updatedFromId: "",
   });
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (existingGym && !formData.id) {
       setFormData(prev => ({
@@ -65,6 +77,19 @@ const AddGymScreen = () => {
 
   const handleChange = (key: string, value: string) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+
+    if (key === "email") {
+      setValidationErrors(prev => ({
+        ...prev,
+        email: validateEmail(value) ? "" : "Invalid email",
+      }));
+    }
+    if (key === "phone") {
+      setValidationErrors(prev => ({
+        ...prev,
+        phone: validatePhone(value) ? "" : "Invalid phone number",
+      }));
+    }
   };
 
   const saveToPendingJson = async (newGym: Gym) => {
@@ -84,6 +109,14 @@ const AddGymScreen = () => {
       Alert.alert("Missing required fields", "Name, latitude, and longitude are required.");
       return;
     }
+    if (!validateEmail(formData.email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+    if (!validatePhone(formData.phone)) {
+      Alert.alert("Invalid Phone Number", "Please enter a valid phone number.");
+      return;
+    }
 
     const newGym: Gym = {
       ...formData,
@@ -101,49 +134,62 @@ const AddGymScreen = () => {
     router.back();
   };
 
+  const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.logoWrapper}>
+        <Image source={logoSource} style={styles.logo} resizeMode="contain" />
+        {!formData.logo && <Text style={styles.logoText}>No logo submitted</Text>}
+      </View>
+
       {Object.entries(formData).map(([key, val]) => {
         if (["approved", "pendingUpdate", "updatedFromId", "id"].includes(key)) return null;
         return (
-          <TextInput
-            key={key}
-            placeholder={key}
-            value={String(val)}
-            onChangeText={(text) => handleChange(key, text)}
-            style={styles.input}
-          />
+          <View key={key}>
+            <TextInput
+              placeholder={key}
+              value={String(val)}
+              onChangeText={(text) => handleChange(key, text)}
+              style={[styles.input, validationErrors[key] ? styles.errorBorder : null]}
+            />
+            {validationErrors[key] ? (
+              <Text style={styles.errorText}>{validationErrors[key]}</Text>
+            ) : null}
+          </View>
         );
       })}
 
-      <View style={styles.switchRow}>
-        <Text>Approved</Text>
-        <Switch
-          value={formData.approved}
-          onValueChange={(value) =>
-            setFormData(prev => ({ ...prev, approved: value }))
-          }
-          disabled={true}
-        />
-      </View>
-
-   {/* <Button title="Submit Gym" onPress={handleSubmit} /> */}
-
-      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+      <TouchableOpacity
+        style={[styles.submitButton, Object.values(validationErrors).some(Boolean) && { backgroundColor: "#aaa" }]}
+        onPress={handleSubmit}
+        disabled={Object.values(validationErrors).some(Boolean)}
+      >
         <Text style={styles.submitButtonText}>SUBMIT</Text>
       </TouchableOpacity>
 
-
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-       <Text style={styles.backButtonText}>BACK</Text>
+        <Text style={styles.backButtonText}>BACK</Text>
       </TouchableOpacity>
-
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { padding: 20 },
+  logoWrapper: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  logo: {
+    width: 200,
+    height: 100,
+  },
+  logoText: {
+    marginTop: 5,
+    fontStyle: "italic",
+    color: "#888",
+  },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -163,7 +209,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     alignSelf: 'center',
-    marginVertical: 12, // 👈 consistent spacing above and below
+    marginVertical: 12,
   },
   backButtonText: {
     color: 'white',
@@ -184,6 +230,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  errorBorder: {
+    borderColor: 'red',
   },
 });
 
