@@ -95,7 +95,7 @@ export default function GymDetailsScreen() {
     style={styles.button}
     onPress={() =>
       router.push({
-        pathname: "/add-gym",
+        pathname: "/update-gym",
         params: { existingGym: JSON.stringify(parsed) },
       })
     }
