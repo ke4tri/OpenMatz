@@ -18,10 +18,18 @@ import gymsData from "../../assets/gyms.json";
 import type { Gym, GymForm } from "../types";
 import { useRouter } from "expo-router";
 
+const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
+
+const validateEmail = (email: string) =>
+  /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) &&
+  !shadyEmailDomains.some((d) => email.toLowerCase().includes(d));
+
+const validatePhone = (phone: string) =>
+  /^\+?[0-9\s\-().]{7,}$/.test(phone.replace(/\D/g, ""));
+
 export default function SubmitScreen() {
   const [gyms, setGyms] = useState<Gym[]>(gymsData as Gym[]);
-
-const router = useRouter();
+  const router = useRouter();
 
   const [formData, setFormData] = useState<GymForm>({
     id: "",
@@ -38,6 +46,8 @@ const router = useRouter();
     approved: false,
   });
 
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
   const refs = {
     name: useRef<TextInput>(null),
     latitude: useRef<TextInput>(null),
@@ -53,6 +63,21 @@ const router = useRouter();
 
   const handleChange = (key: keyof GymForm, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+
+    if (typeof value === "string") {
+      if (key === "email") {
+        setValidationErrors((prev) => ({
+          ...prev,
+          email: validateEmail(value) ? "" : "Invalid email format or domain",
+        }));
+      }
+      if (key === "phone") {
+        setValidationErrors((prev) => ({
+          ...prev,
+          phone: validatePhone(value) ? "" : "Invalid phone number",
+        }));
+      }
+    }
   };
 
   const handleSubmit = async () => {
@@ -84,6 +109,16 @@ const router = useRouter();
       return;
     }
 
+    if (!validateEmail(formData.email)) {
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
+      return;
+    }
+
+    if (!validatePhone(formData.phone)) {
+      Alert.alert("Invalid Phone Number", "Phone number must be at least 7 digits.");
+      return;
+    }
+
     const newGym: Gym = {
       id: Date.now().toString(),
       name: formData.name,
@@ -98,7 +133,6 @@ const router = useRouter();
       phone: formData.phone,
       approved: formData.approved,
     };
-    
 
     const updatedGyms = [...gyms, newGym];
     setGyms(updatedGyms);
@@ -122,7 +156,6 @@ const router = useRouter();
 
     refs.name.current?.focus();
   };
-  
 
   return (
     <KeyboardAvoidingView
@@ -137,142 +170,37 @@ const router = useRouter();
       >
         <Text style={styles.title}>Submit a Gym</Text>
 
-<Pressable onPress={() => router.back()} style={styles.backButton}>
-  <Text style={styles.backText}>← Back to Map</Text>
-</Pressable>
-
-
-        <TextInput
-          ref={refs.name}
-          value={formData.name}
-          onChangeText={(text) => handleChange("name", text)}
-          placeholder="Gym Name"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.latitude.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <TextInput
-          ref={refs.latitude}
-          value={formData.latitude}
-          onChangeText={(text) => handleChange("latitude", text)}
-          placeholder="Latitude"
-          keyboardType="default"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.longitude.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <TextInput
-          ref={refs.longitude}
-          value={formData.longitude}
-          onChangeText={(text) => handleChange("longitude", text)}
-          placeholder="Longitude"
-          keyboardType="default"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.logo.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <TextInput
-          ref={refs.logo}
-          value={formData.logo}
-          onChangeText={(text) => handleChange("logo", text)}
-          placeholder="Logo URL"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.openMatTimes.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <TextInput
-          ref={refs.openMatTimes}
-          value={
-            typeof formData.openMatTimes === "string"
-              ? formData.openMatTimes
-              : formData.openMatTimes.join(", ")
-          }
-          onChangeText={(text) => handleChange("openMatTimes", text)}
-          placeholder="Monday: 9am - 10am (comma separated)"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.city.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <Text style={{ fontSize: 12, color: "#555", marginBottom: 10 }}>
-          Format: Monday: 9am - 10am (comma separated)
-        </Text>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backText}>← Back to Map</Text>
+        </Pressable>
 
         <TextInput
-          ref={refs.city}
-          value={formData.city}
-          onChangeText={(text) => handleChange("city", text)}
-          placeholder="City"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.state.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <TextInput
-          ref={refs.state}
-          value={formData.state}
-          onChangeText={(text) => handleChange("state", text)}
-          placeholder="State"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.address.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <TextInput
-          ref={refs.address}
-          value={formData.address}
-          onChangeText={(text) => handleChange("address", text)}
-          placeholder="Address"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.email.current?.focus()}
-          blurOnSubmit={false}
-          placeholderTextColor="#999"
-          style={styles.input}
-        />
-        <TextInput
+          style={[styles.input, validationErrors.email ? { borderColor: "red" } : null]}
           ref={refs.email}
           value={formData.email}
           onChangeText={(text) => handleChange("email", text)}
           placeholder="Email"
           keyboardType="email-address"
-          returnKeyType="next"
-          onSubmitEditing={() => refs.phone.current?.focus()}
-          blurOnSubmit={false}
           placeholderTextColor="#999"
-          style={styles.input}
         />
+        {validationErrors.email ? <Text style={{ color: "red" }}>{validationErrors.email}</Text> : null}
+
         <TextInput
+          style={[styles.input, validationErrors.phone ? { borderColor: "red" } : null]}
           ref={refs.phone}
           value={formData.phone}
           onChangeText={(text) => handleChange("phone", text)}
           placeholder="Phone Number"
           keyboardType="phone-pad"
-          returnKeyType="done"
-          onSubmitEditing={Keyboard.dismiss}
           placeholderTextColor="#999"
-          style={styles.input}
         />
+        {validationErrors.phone ? <Text style={{ color: "red" }}>{validationErrors.phone}</Text> : null}
 
-        <View style={styles.switchRow}>
-          <Text>Approved</Text>
-          <Switch
-            value={formData.approved}
-            onValueChange={(val) => handleChange("approved", val)}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+        <TouchableOpacity
+          style={[styles.button, Object.values(validationErrors).some(Boolean) && { backgroundColor: "#aaa" }]}
+          onPress={handleSubmit}
+          disabled={Object.values(validationErrors).some(Boolean)}
+        >
           <Text style={styles.buttonText}>Submit Gym</Text>
         </TouchableOpacity>
       </ScrollView>
