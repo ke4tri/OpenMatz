@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -19,11 +18,9 @@ import type { Gym, GymForm } from "../types";
 import { useRouter } from "expo-router";
 
 const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
-
 const validateEmail = (email: string) =>
   /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) &&
   !shadyEmailDomains.some((d) => email.toLowerCase().includes(d));
-
 const validatePhone = (phone: string) =>
   /^\+?[0-9\s\-().]{7,}$/.test(phone.replace(/\D/g, ""));
 
@@ -31,7 +28,11 @@ export default function SubmitScreen() {
   const [gyms, setGyms] = useState<Gym[]>(gymsData as Gym[]);
   const router = useRouter();
 
-  const [formData, setFormData] = useState<GymForm>({
+  const [formData, setFormData] = useState<GymForm & {
+    street?: string;
+    zip?: string;
+    country?: string;
+  }>({
     id: "",
     name: "",
     city: "",
@@ -40,14 +41,16 @@ export default function SubmitScreen() {
     longitude: "",
     logo: "",
     openMatTimes: [],
-    address: "",
+    address: "", // dynamically filled
     email: "",
     phone: "",
     approved: false,
+    street: "",
+    zip: "",
+    country: "USA",
   });
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-
   const refs = {
     name: useRef<TextInput>(null),
     latitude: useRef<TextInput>(null),
@@ -56,14 +59,15 @@ export default function SubmitScreen() {
     openMatTimes: useRef<TextInput>(null),
     city: useRef<TextInput>(null),
     state: useRef<TextInput>(null),
-    address: useRef<TextInput>(null),
     email: useRef<TextInput>(null),
     phone: useRef<TextInput>(null),
+    street: useRef<TextInput>(null),
+    zip: useRef<TextInput>(null),
+    country: useRef<TextInput>(null),
   };
 
-  const handleChange = (key: keyof GymForm, value: string | boolean) => {
+  const handleChange = (key: keyof typeof formData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
-
     if (typeof value === "string") {
       if (key === "email") {
         setValidationErrors((prev) => ({
@@ -119,6 +123,8 @@ export default function SubmitScreen() {
       return;
     }
 
+    const fullAddress = `${formData.street}, ${formData.city}, ${formData.state} ${formData.zip}, ${formData.country}`.trim();
+
     const newGym: Gym = {
       id: Date.now().toString(),
       name: formData.name,
@@ -128,10 +134,10 @@ export default function SubmitScreen() {
       longitude: Number(formData.longitude) || 0,
       logo: formData.logo,
       openMatTimes: openMatStrings,
-      address: formData.address,
+      address: fullAddress,
       email: formData.email,
       phone: formData.phone,
-      approved: formData.approved,
+      approved: false,
     };
 
     const updatedGyms = [...gyms, newGym];
@@ -152,6 +158,9 @@ export default function SubmitScreen() {
       email: "",
       phone: "",
       approved: false,
+      street: "",
+      zip: "",
+      country: "USA"
     });
 
     refs.name.current?.focus();
@@ -174,26 +183,19 @@ export default function SubmitScreen() {
           <Text style={styles.backText}>← Back to Map</Text>
         </Pressable>
 
-        <TextInput
-          style={[styles.input, validationErrors.email ? { borderColor: "red" } : null]}
-          ref={refs.email}
-          value={formData.email}
-          onChangeText={(text) => handleChange("email", text)}
-          placeholder="Email"
-          keyboardType="email-address"
-          placeholderTextColor="#999"
-        />
-        {validationErrors.email ? <Text style={{ color: "red" }}>{validationErrors.email}</Text> : null}
+        {["name", "logo", "latitude", "longitude", "openMatTimes", "email", "phone", "street", "city", "state", "zip", "country"].map((field) => (
+          <TextInput
+            key={field}
+            ref={refs[field as keyof typeof refs]}
+            style={[styles.input, validationErrors[field] ? { borderColor: "red" } : null]}
+            value={formData[field as keyof typeof formData] as string}
+            onChangeText={(text) => handleChange(field as keyof typeof formData, text)}
+            placeholder={field}
+            placeholderTextColor="#999"
+          />
+        ))}
 
-        <TextInput
-          style={[styles.input, validationErrors.phone ? { borderColor: "red" } : null]}
-          ref={refs.phone}
-          value={formData.phone}
-          onChangeText={(text) => handleChange("phone", text)}
-          placeholder="Phone Number"
-          keyboardType="phone-pad"
-          placeholderTextColor="#999"
-        />
+        {validationErrors.email ? <Text style={{ color: "red" }}>{validationErrors.email}</Text> : null}
         {validationErrors.phone ? <Text style={{ color: "red" }}>{validationErrors.phone}</Text> : null}
 
         <TouchableOpacity
@@ -229,12 +231,6 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     marginBottom: 10,
     color: "#000",
-  },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
   },
   button: {
     backgroundColor: "#007AFF",
