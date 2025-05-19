@@ -39,3 +39,4 @@ app-example
 .env
 assets/gyms.json
 assets/gyms.json
+assets/gyms_nozip.json
