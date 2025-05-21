@@ -1,8 +1,9 @@
 import React, { useState, useRef, useMemo, useCallback } from "react";
-import { View, StyleSheet, Image } from "react-native";
+import { View, StyleSheet, Image, TouchableOpacity, Text } from "react-native";
 import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
 import rawGyms from "../../assets/gyms.json";
+import { useRouter } from "expo-router"; // ✅ add router for navigation
 
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
 
@@ -16,6 +17,7 @@ export default function MapScreen() {
 
   const markerRefs = useRef<{ [id: string]: MarkerRef | null }>({});
   const gyms = useMemo(() => rawGyms.filter((g) => g.approved), []);
+  const router = useRouter();
 
   const onRegionChangeComplete = useCallback((r: Region) => {
     setRegion(r);
@@ -55,13 +57,21 @@ export default function MapScreen() {
         {markers}
       </MapView>
 
-      {/* Floating Logo */}
+      {/* Floating Logo - unchanged from your working version */}
       <View style={styles.logoWrapper}>
         <Image
           source={require("../../assets/appLogo/OpenMats_Color.png")}
           style={styles.logo}
         />
       </View>
+
+      {/* Floating Submit Button */}
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={() => router.push("/drawer/submit")}
+      >
+        <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -85,5 +95,20 @@ const styles = StyleSheet.create({
     width: 640,
     height: 160,
     resizeMode: "contain",
+  },
+  floatingButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    elevation: 5,
+  },
+  floatingButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
