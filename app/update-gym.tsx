@@ -1,21 +1,30 @@
-// Full updated update-gym.tsx
-
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  View, TextInput, StyleSheet, ScrollView, Text, Alert,
-  TouchableOpacity, Image, Dimensions
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  TouchableOpacity,
+  Switch,
+  Image,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import * as Location from "expo-location";
 import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { Gym } from "./types";
+import TimeBlockPicker, { TimeBlock } from "../components/TimeBlockPicker";
 
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
 const fallbackLogo = require("../assets/fallbacks/BJJ_White_Belt.svg.png");
 
+const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
+
 const validateEmail = (email: string) =>
-  /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+  /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) &&
+  !shadyEmailDomains.some((d) => email.toLowerCase().includes(d));
+
 const validatePhone = (phone: string) =>
   /^\+?[0-9\s\-().]{7,}$/.test(phone.replace(/\D/g, ""));
 
@@ -23,65 +32,69 @@ const UpdateGymScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  const [formData, setFormData] = useState<Gym & {
-    street?: string;
-    zip?: string;
-    country?: string;
-  }>({
+  const [formData, setFormData] = useState({
     id: "",
     name: "",
+    city: "",
+    state: "",
     logo: "",
     latitude: 0,
     longitude: 0,
-    openMatTimes: [],
-    phone: "",
-    email: "",
     address: "",
-    city: "",
-    state: "",
+    email: "",
+    phone: "",
+    website: "",
+    country: "",
     approved: false,
-    street: "",
-    zip: "",
-    country: "USA",
+    pendingUpdate: true,
+    updatedFromId: "",
   });
 
+  const [openMatBlocks, setOpenMatBlocks] = useState<TimeBlock[]>([]);
+  const [classTimeBlocks, setClassTimeBlocks] = useState<TimeBlock[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [locationLoaded, setLocationLoaded] = useState(false);
 
   useEffect(() => {
     if (params.existingGym) {
       try {
-        const parsed = JSON.parse(params.existingGym as string);
-        setFormData((prev) => ({
-          ...prev,
-          ...parsed,
-          zip: parsed.zip || "",
-          country: parsed.country || "USA",
-          approved: false,
-        }));
-        setLocationLoaded(true);
-      } catch (e) {
-        console.warn("Failed to parse gym:", e);
-      }
-    } else {
-      Location.requestForegroundPermissionsAsync().then(({ status }) => {
-        if (status === "granted") {
-          Location.getCurrentPositionAsync().then((loc) => {
-            setFormData((prev) => ({
-              ...prev,
-              latitude: loc.coords.latitude,
-              longitude: loc.coords.longitude,
-            }));
-            setLocationLoaded(true);
-          });
+        const gym: Gym = JSON.parse(params.existingGym as string);
+        setFormData({
+          ...formData,
+          ...gym,
+          latitude: gym.latitude,
+          longitude: gym.longitude,
+          pendingUpdate: true,
+          updatedFromId: gym.id,
+        });
+
+        if (Array.isArray(gym.openMatTimes)) {
+          const parsedOM = gym.openMatTimes.map(parseTimeBlock);
+          setOpenMatBlocks(parsedOM);
         }
-      });
+        if (Array.isArray(gym.classTimes)) {
+          const parsedCT = gym.classTimes.map(parseTimeBlock);
+          setClassTimeBlocks(parsedCT);
+        }
+      } catch (e) {
+        console.warn("Failed to parse existingGym", e);
+      }
     }
-  }, []);
+  }, [params.existingGym]);
 
-  const handleChange = (key: keyof typeof formData, value: string) => {
+  const parseTimeBlock = (entry: string): TimeBlock => {
+    const [dayPart, rest] = entry.split(": ");
+    const [range, note] = rest?.split("(") ?? [rest, ""];
+    const [startTime, endTime] = range.split("-").map((s) => s.trim());
+    return {
+      day: dayPart,
+      startTime,
+      endTime: endTime?.replace(")", "") || "",
+      note: note?.replace(")", "") || "",
+    };
+  };
+
+  const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
-
     if (key === "email") {
       setValidationErrors((prev) => ({
         ...prev,
@@ -96,46 +109,50 @@ const UpdateGymScreen = () => {
     }
   };
 
-  const handleMarkerDrag = (e: any) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setFormData((prev) => ({ ...prev, latitude, longitude }));
-  };
-
-  const saveToPendingJson = async (gym: Gym) => {
+  const saveToPendingJson = async (newGym: Gym) => {
     try {
       const existingData = await FileSystem.readAsStringAsync(pendingGymsPath).catch(() => "[]");
       const parsed = JSON.parse(existingData);
-      parsed.push(gym);
+      parsed.push(newGym);
       await FileSystem.writeAsStringAsync(pendingGymsPath, JSON.stringify(parsed, null, 2));
     } catch (e) {
-      Alert.alert("Error saving submission.");
+      console.error("Failed to save to pending gyms:", e);
+      Alert.alert("Error", "Failed to save the submission.");
     }
   };
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.latitude || !formData.longitude) {
-      Alert.alert("Missing Info", "Name, latitude, and longitude required.");
+      Alert.alert("Missing required fields", "Name, latitude, and longitude are required.");
       return;
     }
     if (!validateEmail(formData.email)) {
-      Alert.alert("Invalid Email");
+      Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
     if (!validatePhone(formData.phone)) {
-      Alert.alert("Invalid Phone");
+      Alert.alert("Invalid Phone Number", "Please enter a valid phone number.");
       return;
     }
 
-    const combinedAddress = `${formData.street}, ${formData.city}, ${formData.state} ${formData.zip}, ${formData.country}`.trim();
+    const openMatTimes = openMatBlocks.map(b =>
+      `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+    );
+    const classTimes = classTimeBlocks.map(b =>
+      `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+    );
 
-    const gymToSave: Gym = {
+    const newGym: Gym = {
       ...formData,
-      address: combinedAddress,
+      openMatTimes,
+      classTimes,
+      latitude: parseFloat(formData.latitude as any),
+      longitude: parseFloat(formData.longitude as any),
       approved: false,
     };
 
-    await saveToPendingJson(gymToSave);
-    Alert.alert("Update submitted and pending approval!");
+    await saveToPendingJson(newGym);
+    Alert.alert("Success", "Gym submitted and pending approval!");
     router.back();
   };
 
@@ -148,45 +165,62 @@ const UpdateGymScreen = () => {
         {!formData.logo && <Text style={styles.logoText}>No logo submitted</Text>}
       </View>
 
-      {["name", "logo", "email", "phone", "openMatTimes", "street", "city", "state", "zip", "country"].map((field) => (
-        <View key={field} style={{ marginBottom: 12 }}>
-          <Text style={styles.label}>{field.toUpperCase()}</Text>
+      {["name", "city", "state", "country", "email", "phone", "website"].map((key) => (
+        <View key={key}>
           <TextInput
-            placeholder={field}
-            value={formData[field as keyof typeof formData] as string}
-            onChangeText={(text) => handleChange(field as keyof typeof formData, text)}
-            style={[styles.input, validationErrors[field] ? styles.errorBorder : null]}
+            placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+            value={String(formData[key as keyof typeof formData] || "")}
+            onChangeText={(text) => handleChange(key, text)}
+            style={[styles.input, validationErrors[key] ? styles.errorBorder : null]}
           />
-          {validationErrors[field] ? (
-            <Text style={styles.errorText}>{validationErrors[field]}</Text>
+          {validationErrors[key] ? (
+            <Text style={styles.errorText}>{validationErrors[key]}</Text>
           ) : null}
         </View>
       ))}
 
-      {locationLoaded && (
-        <>
-          <Text style={styles.mapNote}>Hold red pin to adjust location</Text>
-          <MapView
-            style={styles.map}
-            region={{
-              latitude: formData.latitude,
-              longitude: formData.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            <Marker
-              coordinate={{ latitude: formData.latitude, longitude: formData.longitude }}
-              draggable
-              pinColor="red"
-              onDragEnd={handleMarkerDrag}
-            />
-          </MapView>
-        </>
-      )}
+      <TimeBlockPicker
+        label="Open Mat Times"
+        blocks={openMatBlocks}
+        setBlocks={setOpenMatBlocks}
+      />
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>SUBMIT UPDATE</Text>
+      <TimeBlockPicker
+        label="Class Times"
+        blocks={classTimeBlocks}
+        setBlocks={setClassTimeBlocks}
+      />
+
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: formData.latitude || 37.78825,
+          longitude: formData.longitude || -122.4324,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+      >
+        <Marker
+          draggable
+          coordinate={{
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+          }}
+          onDragEnd={(e) =>
+            setFormData((prev) => ({
+              ...prev,
+              latitude: e.nativeEvent.coordinate.latitude,
+              longitude: e.nativeEvent.coordinate.longitude,
+            }))
+          }
+        />
+      </MapView>
+      <Text style={{ textAlign: "center", marginVertical: 5 }}>
+        Hold down red pin to adjust location
+      </Text>
+
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <Text style={styles.submitButtonText}>SUBMIT</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -197,43 +231,69 @@ const UpdateGymScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#f9f9f9" },
-  logoWrapper: { alignItems: "center", marginBottom: 20 },
-  logo: { width: 200, height: 100 },
-  logoText: { marginTop: 5, fontStyle: "italic", color: "#888" },
-  label: { fontSize: 14, fontWeight: "500", marginBottom: 4 },
-  input: {
-    borderWidth: 1, borderColor: "#ccc", padding: 10, borderRadius: 6, backgroundColor: "#fff",
+  container: { padding: 20 },
+  logoWrapper: {
+    alignItems: "center",
+    marginBottom: 20,
   },
-  mapNote: {
-    marginTop: 20,
-    textAlign: "center",
-    fontSize: 12,
-    color: "#666",
+  logo: {
+    width: 200,
+    height: 100,
+  },
+  logoText: {
+    marginTop: 5,
+    fontStyle: "italic",
+    color: "#888",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
     marginBottom: 10,
+    borderRadius: 5,
+  },
+  errorText: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  errorBorder: {
+    borderColor: "red",
+  },
+  submitButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignSelf: "center",
+    marginVertical: 12,
+  },
+  submitButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  backButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   map: {
     height: 200,
-    width: Dimensions.get("window").width - 40,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    padding: 14,
-    borderRadius: 8,
-    alignItems: "center",
+    width: "100%",
     marginTop: 10,
+    marginBottom: 5,
   },
-  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  backButton: {
-    marginTop: 10,
-    padding: 10,
-    alignSelf: "center",
-  },
-  backButtonText: { fontSize: 16, fontWeight: "600", color: "#007AFF" },
-  errorText: { color: "red", fontSize: 12, marginTop: 4 },
-  errorBorder: { borderColor: "red" },
 });
 
 export default UpdateGymScreen;
