@@ -155,23 +155,22 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
               placeholderTextColor="#888"
             />
 
-            {pickerMode && (
-              <>
-                <DateTimePicker
-                  value={tempTime}
-                  mode="time"
-                  is24Hour={false}
-                  display="spinner"
-                  textColor="black"
-                  onChange={(_, date) => {
-                    if (date) setTempTime(date);
-                  }}
-                />
-                <TouchableOpacity style={styles.modalButton} onPress={confirmPicker}>
-                  <Text style={styles.modalButtonText}>Confirm Time</Text>
-                </TouchableOpacity>
-              </>
-            )}
+{!pickerMode && (
+  <View style={styles.modalButtons}>
+    {startConfirmed && endConfirmed && (
+      <TouchableOpacity style={styles.modalButton} onPress={addBlock}>
+        <Text style={styles.modalButtonText}>Add</Text>
+      </TouchableOpacity>
+    )}
+    <TouchableOpacity
+      style={styles.modalButton}
+      onPress={() => setModalVisible(false)}
+    >
+      <Text style={styles.modalButtonText}>Cancel</Text>
+    </TouchableOpacity>
+  </View>
+)}
+
 
             {!pickerMode && startConfirmed && endConfirmed && (
               <View style={styles.modalButtons}>
