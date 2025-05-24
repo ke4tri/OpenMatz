@@ -13,7 +13,7 @@ import {
 import MapView, { Marker } from "react-native-maps";
 import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import type { Gym } from "./types";
+import type { Gym } from "../types";
 import TimeBlockPicker, { TimeBlock } from "../components/TimeBlockPicker";
 
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
@@ -227,6 +227,8 @@ const UpdateGymScreen = () => {
         <Text style={styles.backButtonText}>BACK</Text>
       </TouchableOpacity>
     </ScrollView>
+
+    
   );
 };
 

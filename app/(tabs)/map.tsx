@@ -4,6 +4,8 @@ import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
 import rawGyms from "../../assets/gyms.json";
 import { useRouter } from "expo-router"; // ✅ add router for navigation
+import * as FileSystem from "expo-file-system";
+import { Alert } from "react-native";
 
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
 
@@ -14,6 +16,9 @@ export default function MapScreen() {
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
+
+
+  const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
 
   const markerRefs = useRef<{ [id: string]: MarkerRef | null }>({});
   const gyms = useMemo(() => rawGyms.filter((g) => g.approved), []);
@@ -26,14 +31,21 @@ export default function MapScreen() {
   const markers = useMemo(
     () =>
       gyms.map((gym) => {
+        // Debug log
+        if (typeof gym !== "object" || !gym.latitude || !gym.longitude) {
+          console.error("🚨 Invalid gym data:", gym);
+          return null;
+        }
+  
         const refCb = (ref: MarkerRef | null) => {
           markerRefs.current[gym.id] = ref;
         };
+  
         const handlePress = () => {
           Object.values(markerRefs.current).forEach((r) => r?.hideCallout());
           markerRefs.current[gym.id]?.showCallout();
         };
-
+  
         return (
           <GymMarker
             key={gym.id}
@@ -42,9 +54,10 @@ export default function MapScreen() {
             onPress={handlePress}
           />
         );
-      }),
+      }).filter(Boolean), // Remove nulls
     [gyms]
   );
+  
 
   return (
     <View style={styles.container}>
@@ -56,7 +69,6 @@ export default function MapScreen() {
       >
         {markers}
       </MapView>
-
       {/* Floating Logo - unchanged from your working version */}
       <View style={styles.logoWrapper}>
         <Image
@@ -72,6 +84,24 @@ export default function MapScreen() {
       >
         <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
       </TouchableOpacity>
+{/* //DELETE THIS WHEN DONE */}
+      {/* <TouchableOpacity
+          style={[styles.floatingButton, { bottom: 90, backgroundColor: "#4CAF50" }]}
+          onPress={() => router.push("/view-pending")}
+        >
+          <Text style={styles.floatingButtonText}> View Pending</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+              style={[styles.floatingButton, { backgroundColor: "red", bottom: 150 }]}
+              onPress={async () => {
+                await FileSystem.writeAsStringAsync(pendingGymsPath, "[]");
+                Alert.alert("Cleared", "pending_gyms.json has been emptied.");
+              }}
+            >
+              <Text style={styles.floatingButtonText}>Clear Pending Gyms</Text>
+       </TouchableOpacity> */}
+
     </View>
   );
 }
@@ -95,6 +125,12 @@ const styles = StyleSheet.create({
     width: 640,
     height: 160,
     resizeMode: "contain",
+  },
+  floatingButtonsWrapper: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    alignItems: "flex-end",
   },
   floatingButton: {
     position: "absolute",
