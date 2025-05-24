@@ -160,10 +160,14 @@ const UpdateGymScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+
       <View style={styles.logoWrapper}>
         <Image source={logoSource} style={styles.logo} resizeMode="contain" />
-        {!formData.logo && <Text style={styles.logoText}>No logo submitted</Text>}
+        {!formData.logo && (
+          <Text style={styles.logoText}>No logo submitted</Text>
+        )}
       </View>
+
 
       {["name", "city", "state", "country", "email", "phone", "website"].map((key) => (
         <View key={key}>
