@@ -3,7 +3,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Marker, Callout, CalloutSubview } from "react-native-maps";
 import { useRouter } from "expo-router";
-import type { Gym } from "../app/types";
+import type { Gym } from "../types";
 
 
 type Props = {
@@ -40,9 +40,15 @@ const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
         <Text style={styles.openMatsLabel}>OPENMATS</Text>
       )}
 
-      {gym.openMatTimes.map((time, idx) => (
-        <Text key={idx} style={styles.time}>{time}</Text>
-      ))}
+
+      {gym.openMatTimes.map((time, idx) =>
+  typeof time === "string" ? (
+    <Text key={idx} style={styles.time}>{time}</Text>
+  ) : (
+    <Text key={idx} style={[styles.time, { color: "red" }]}>Invalid time</Text>
+  )
+)}
+
 
       <Text style={styles.tapHint}>Tap for more info</Text>
     </View>

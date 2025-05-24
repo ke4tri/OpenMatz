@@ -12,14 +12,16 @@ import {
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { Gym } from "../types";
+import type { Gym } from "../../types";
 import TimeBlockPicker, { TimeBlock } from "../../components/TimeBlockPicker";
 import { useRouter } from "expo-router";
 import { KeyboardAwareFlatList } from "react-native-keyboard-aware-scroll-view";
+import * as FileSystem from "expo-file-system";
 
 
 const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
 const fallbackLogo = require("../../assets/fallbacks/BJJ_White_Belt.svg.png");
+const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
 
 const validateEmail = (email: string) =>
   /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) &&
@@ -122,13 +124,25 @@ export default function SubmitScreen() {
       classTimes,
     };
 
-    const existing = await AsyncStorage.getItem("customGyms");
-    const parsed = existing ? JSON.parse(existing) : [];
-    parsed.push(newGym);
-    await AsyncStorage.setItem("customGyms", JSON.stringify(parsed));
+    // const existing = await AsyncStorage.getItem("customGyms");
+    // const parsed = existing ? JSON.parse(existing) : [];
+    // parsed.push(newGym);
+    // await AsyncStorage.setItem("customGyms", JSON.stringify(parsed));
+
+    try {
+      const existing = await FileSystem.readAsStringAsync(pendingGymsPath).catch(() => "[]");
+      const parsed = JSON.parse(existing);
+      parsed.push(newGym);
+      await FileSystem.writeAsStringAsync(pendingGymsPath, JSON.stringify(parsed, null, 2));
+    } catch (e) {
+      console.error("Failed to save to pending gyms:", e);
+      Alert.alert("Error", "Failed to save the submission.");
+      return;
+    }
+    
 
     Alert.alert("Success", "Gym has been submitted for review.");
-    router.back();
+    router.replace("/(tabs)/map");
   };
 
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
@@ -206,7 +220,7 @@ export default function SubmitScreen() {
         <Text style={styles.submitButtonText}>Submit Gym</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/(tabs)/map")}>
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
     </>
