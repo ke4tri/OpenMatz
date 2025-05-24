@@ -15,6 +15,8 @@
     "@react-native-community/datetimepicker": "8.3.0",
     "@react-navigation/drawer": "^7.1.1",
     "@react-navigation/stack": "^7.3.1",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
     "expo": "~53.0.8",
     "expo-constants": "~17.1.6",
     "expo-font": "~13.3.1",

@@ -33,7 +33,7 @@ export default function GymDetailsScreen() {
       <ScrollView contentContainerStyle={styles.container}>
          {/* Back Button */}
   <TouchableOpacity style={styles.button} onPress={() => router.back()}>
-    <Text style={styles.buttonText}>← Back to Map</Text>
+    <Text style={styles.buttonText}>Back to Map</Text>
   </TouchableOpacity>
 
   {/* Gym Name */}

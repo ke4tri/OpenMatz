@@ -17,7 +17,12 @@ import TimeBlockPicker, { TimeBlock } from "../../components/TimeBlockPicker";
 import { useRouter } from "expo-router";
 import { KeyboardAwareFlatList } from "react-native-keyboard-aware-scroll-view";
 import * as FileSystem from "expo-file-system";
+import axios from "axios";
+import Constants from "expo-constants";
 
+
+const OPENCAGE_API_KEY = Constants.expoConfig?.extra?.opencageApiKey;
+console.log("🔐 OpenCage API Key:", OPENCAGE_API_KEY);
 
 const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
 const fallbackLogo = require("../../assets/fallbacks/BJJ_White_Belt.svg.png");
@@ -55,20 +60,69 @@ export default function SubmitScreen() {
   const [classTimeBlocks, setClassTimeBlocks] = useState<TimeBlock[]>([]);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true);
 
+  const fetchFromOpenCage = async (latitude: number, longitude: number) => {
+    try {
+      const response = await axios.get("https://api.opencagedata.com/geocode/v1/json", {
+        params: {
+          key: OPENCAGE_API_KEY,
+          q: `${latitude},${longitude}`,
+          no_annotations: 1,
+        },
+      });
+  
+      const result = response.data?.results?.[0];
+      const components = result?.components || {};
+  
+      return {
+        city: components.city || components.town || components.village || "",
+        state: components.state || "",
+        zip: components.postcode || "",
+        country: components.country || "",
+      };
+    } catch (error) {
+      console.warn("OpenCage fallback failed", error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === "granted") {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+  
+        if (status !== "granted") {
+          console.warn("Location permission not granted");
+          setIsLoadingLocation(false);
+          return;
+        }
+  
         const loc = await Location.getCurrentPositionAsync({});
+        if (!loc || !loc.coords) {
+          console.warn("Location not available");
+          setIsLoadingLocation(false);
+          return;
+        }
+  
+        const { latitude, longitude } = loc.coords;
+  
+        console.log("🛰 Initial location loaded", latitude, longitude);
+  
         setFormData((prev) => ({
           ...prev,
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
+          latitude,
+          longitude,
         }));
+  
+        await updateAddressFromCoords(latitude, longitude);
+      } catch (e) {
+        console.warn("❌ Location error", e);
+      } finally {
+        setIsLoadingLocation(false);
       }
-      setIsLoadingLocation(false);
     })();
   }, []);
+  
+  
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -82,6 +136,38 @@ export default function SubmitScreen() {
       setValidationErrors((prev) => ({
         ...prev,
         phone: validatePhone(value) ? "" : "Invalid phone",
+      }));
+    }
+  };
+
+  const updateAddressFromCoords = async (latitude: number, longitude: number) => {
+    try {
+      const result = await Location.reverseGeocodeAsync({ latitude, longitude });
+  
+      if (result && result.length > 0) {
+        const info = result[0];
+        setFormData((prev) => ({
+          ...prev,
+          city: info.city || "",
+          state: info.region || "",
+          zip: info.postalCode || "",
+          country: info.country || "",
+        }));
+        return;
+      }
+    } catch (err) {
+      console.warn("Expo reverse geocoding failed, trying OpenCage...", err);
+    }
+  
+    // 🚨 fallback to OpenCage
+    const fallback = await fetchFromOpenCage(latitude, longitude);
+    if (fallback) {
+      setFormData((prev) => ({
+        ...prev,
+        city: fallback.city,
+        state: fallback.state,
+        zip: fallback.zip,
+        country: fallback.country,
       }));
     }
   };
@@ -124,6 +210,8 @@ export default function SubmitScreen() {
       classTimes,
     };
 
+  
+
     // const existing = await AsyncStorage.getItem("customGyms");
     // const parsed = existing ? JSON.parse(existing) : [];
     // parsed.push(newGym);
@@ -147,6 +235,7 @@ export default function SubmitScreen() {
 
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
 
+
   return (
 <KeyboardAwareFlatList
   data={[1]} // dummy item to trigger rendering
@@ -154,10 +243,6 @@ export default function SubmitScreen() {
   contentContainerStyle={styles.container}
   renderItem={() => (
     <>
-      <View style={styles.logoWrapper}>
-        <Image source={logoSource} style={styles.logo} resizeMode="contain" />
-        {!formData.logo && <Text style={styles.logoText}>No logo submitted</Text>}
-      </View>
 
       {["name", "logo", "city", "state", "zip", "country", "email", "phone", "website"].map((key) => (
         <View key={key}>
@@ -194,13 +279,18 @@ export default function SubmitScreen() {
                 latitude: formData.latitude,
                 longitude: formData.longitude,
               }}
-              onDragEnd={(e) =>
+              onDragEnd={(e) => {
+                const { latitude, longitude } = e.nativeEvent.coordinate;
+              
                 setFormData((prev) => ({
                   ...prev,
-                  latitude: e.nativeEvent.coordinate.latitude,
-                  longitude: e.nativeEvent.coordinate.longitude,
-                }))
-              }
+                  latitude,
+                  longitude,
+                }));
+              
+                updateAddressFromCoords(latitude, longitude); // ← new line
+                
+              }}
             />
           </MapView>
           <Text style={{ textAlign: "center", marginVertical: 5 }}>
@@ -231,7 +321,11 @@ export default function SubmitScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: { 
+    paddingTop: 70,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
   logoWrapper: {
     alignItems: "center",
     marginBottom: 20,
