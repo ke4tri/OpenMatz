@@ -6,6 +6,9 @@ import rawGyms from "../../assets/gyms.json";
 import { useRouter } from "expo-router"; // ✅ add router for navigation
 import * as FileSystem from "expo-file-system";
 import { Alert } from "react-native";
+import Constants from "expo-constants";
+
+console.log("🔐 Firebase Project ID:", Constants.expoConfig?.extra?.firebaseProjectId);
 
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
 

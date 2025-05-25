@@ -24,12 +24,18 @@ type Props = {
 };
 
 const daysOfWeek = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
 ];
 
 const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedDay, setSelectedDay] = useState("");
+  const [selectedDay, setSelectedDay] = useState("Monday");
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
   const [tempTime, setTempTime] = useState(new Date());
@@ -70,13 +76,13 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
   };
 
   const resetForm = () => {
-    setSelectedDay("");
+    setSelectedDay("Monday");
     setStartTime(new Date());
     setEndTime(new Date());
     setNote("");
-    setPickerMode(null);
     setStartConfirmed(false);
     setEndConfirmed(false);
+    setPickerMode(null);
   };
 
   const removeBlock = (index: number) => {
@@ -110,9 +116,8 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => {
-          setModalVisible(true);
-          setSelectedDay(daysOfWeek[0]);
           resetForm();
+          setModalVisible(true);
         }}
       >
         <Text style={styles.addButtonText}>Add Time</Text>
@@ -155,28 +160,13 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
               placeholderTextColor="#888"
             />
 
-{!pickerMode && (
-  <View style={styles.modalButtons}>
-    {startConfirmed && endConfirmed && (
-      <TouchableOpacity style={styles.modalButton} onPress={addBlock}>
-        <Text style={styles.modalButtonText}>Add</Text>
-      </TouchableOpacity>
-    )}
-    <TouchableOpacity
-      style={styles.modalButton}
-      onPress={() => setModalVisible(false)}
-    >
-      <Text style={styles.modalButtonText}>Cancel</Text>
-    </TouchableOpacity>
-  </View>
-)}
-
-
-            {!pickerMode && startConfirmed && endConfirmed && (
+            {!pickerMode && (
               <View style={styles.modalButtons}>
-                <TouchableOpacity style={styles.modalButton} onPress={addBlock}>
-                  <Text style={styles.modalButtonText}>Add</Text>
-                </TouchableOpacity>
+                {startConfirmed && endConfirmed && (
+                  <TouchableOpacity style={styles.modalButton} onPress={addBlock}>
+                    <Text style={styles.modalButtonText}>Add</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   style={styles.modalButton}
                   onPress={() => setModalVisible(false)}
@@ -184,6 +174,30 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
                   <Text style={styles.modalButtonText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
+            )}
+
+            {pickerMode && (
+              <DateTimePicker
+                value={tempTime}
+                mode="time"
+                is24Hour={false}
+                display="spinner"
+                textColor="black"
+                onChange={(event, selectedDate) => {
+                  if (selectedDate) {
+                    setTempTime(selectedDate);
+                  }
+                }}
+              />
+            )}
+
+            {pickerMode && (
+              <TouchableOpacity
+                style={[styles.modalButton, { alignSelf: "center" }]}
+                onPress={confirmPicker}
+              >
+                <Text style={styles.modalButtonText}>Confirm</Text>
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -272,3 +286,4 @@ const styles = StyleSheet.create({
 });
 
 export default TimeBlockPicker;
+

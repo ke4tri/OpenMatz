@@ -1,9 +1,9 @@
 import { Stack } from "expo-router";
 
-export default function SubmitLayout() {
+export default function ScreensLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
+      <Stack.Screen name="submit" />
     </Stack>
   );
 }

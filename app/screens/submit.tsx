@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  Platform
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
@@ -19,6 +20,12 @@ import { KeyboardAwareFlatList } from "react-native-keyboard-aware-scroll-view";
 import * as FileSystem from "expo-file-system";
 import axios from "axios";
 import Constants from "expo-constants";
+
+//FIREBASE
+import { signInAnonymously } from "firebase/auth";
+// import { auth } from "../../Firebase/firebaseConfig"; // adjust path if needed
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../../Firebase/firebaseConfig";
 
 
 const OPENCAGE_API_KEY = Constants.expoConfig?.extra?.opencageApiKey;
@@ -86,6 +93,36 @@ export default function SubmitScreen() {
   };
 
   useEffect(() => {
+    // signInAnonymously(auth)
+    // .then((userCredential) => {
+    //   console.log("✅ Signed in anonymously:", userCredential.user.uid);
+    // })
+    // .catch((error) => {
+    //   console.error("❌ Failed to sign in:", error);
+    // });
+
+    //************Another version of the above: 
+    //If you comment the below out you don't get the ERROR 
+    // ERROR  Error: Component auth has not been registered yet, js engine: hermes
+    // TODO: Switch to initializeAuth() + AsyncStorage when migrating to EAS build
+
+    // const login = async () => {
+    //   try {
+    //     const userCredential = await signInAnonymously(auth);
+    //     console.log("✅ Logged in anonymously:", userCredential.user.uid);
+    //   } catch (err) {
+    //     if (__DEV__) {
+    //       console.warn("⚠️ Firebase auth warning in Expo Go (dev only):", err);
+    //     } else {
+    //       throw err;
+    //     }
+    //   }
+    // };
+  
+    // login();
+  
+   //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -119,7 +156,8 @@ export default function SubmitScreen() {
       } finally {
         setIsLoadingLocation(false);
       }
-    })();
+    }
+  )();
   }, []);
   
   
@@ -174,23 +212,18 @@ export default function SubmitScreen() {
 
   const handleSubmit = async () => {
     const errors: string[] = [];
+
     if (!formData.name || !formData.latitude || !formData.longitude) {
       errors.push("Name, latitude, and longitude are required.");
     }
-    if (!validateEmail(formData.email)) {
-      errors.push("Invalid email address.");
-    }
-    if (!validatePhone(formData.phone)) {
-      errors.push("Invalid phone number.");
-    }
-
+  
     if (errors.length > 0) {
       Alert.alert("Validation Error", errors.join("\n"));
       return;
     }
-
+  
     const address = `${formData.city}, ${formData.state} ${formData.zip}, ${formData.country}`.trim();
-
+  
     const openMatTimes = openMatBlocks.map(
       (b) =>
         `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
@@ -199,38 +232,24 @@ export default function SubmitScreen() {
       (b) =>
         `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
     );
-
-    const newGym: Gym = {
+  
+    const newGym = {
       ...formData,
-      id: Date.now().toString(),
-      latitude: formData.latitude,
-      longitude: formData.longitude,
       address,
       openMatTimes,
       classTimes,
+      approved: false,
+      createdAt: new Date().toISOString(),
     };
-
   
-
-    // const existing = await AsyncStorage.getItem("customGyms");
-    // const parsed = existing ? JSON.parse(existing) : [];
-    // parsed.push(newGym);
-    // await AsyncStorage.setItem("customGyms", JSON.stringify(parsed));
-
     try {
-      const existing = await FileSystem.readAsStringAsync(pendingGymsPath).catch(() => "[]");
-      const parsed = JSON.parse(existing);
-      parsed.push(newGym);
-      await FileSystem.writeAsStringAsync(pendingGymsPath, JSON.stringify(parsed, null, 2));
+      await addDoc(collection(db, "pendingGyms"), newGym);
+      Alert.alert("Success", "Gym has been submitted for review.");
+      router.replace("/(tabs)/map");
     } catch (e) {
-      console.error("Failed to save to pending gyms:", e);
-      Alert.alert("Error", "Failed to save the submission.");
-      return;
+      console.error("🔥 Firestore error:", e);
+      Alert.alert("Error", "Failed to save gym to the cloud.");
     }
-    
-
-    Alert.alert("Success", "Gym has been submitted for review.");
-    router.replace("/(tabs)/map");
   };
 
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
@@ -243,14 +262,26 @@ export default function SubmitScreen() {
   contentContainerStyle={styles.container}
   renderItem={() => (
     <>
-
-      {["name", "logo", "city", "state", "zip", "country", "email", "phone", "website"].map((key) => (
+      {[
+        "name",
+        "logo",
+        "city",
+        "state",
+        "zip",
+        "country",
+        "email",
+        "phone",
+        "website",
+      ].map((key) => (
         <View key={key}>
           <TextInput
             placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
             value={String(formData[key as keyof typeof formData] || "")}
             onChangeText={(text) => handleChange(key, text)}
-            style={[styles.input, validationErrors[key] ? styles.errorBorder : null]}
+            style={[
+              styles.input,
+              validationErrors[key] ? styles.errorBorder : null,
+            ]}
             placeholderTextColor="#999"
           />
           {validationErrors[key] ? (
@@ -259,8 +290,11 @@ export default function SubmitScreen() {
         </View>
       ))}
 
-      <TimeBlockPicker label="Open Mat Times" blocks={openMatBlocks} setBlocks={setOpenMatBlocks} />
-      <TimeBlockPicker label="Class Times" blocks={classTimeBlocks} setBlocks={setClassTimeBlocks} />
+      <Text style={styles.sectionHeader}>Open Mat Times</Text>
+      <TimeBlockPicker blocks={openMatBlocks} setBlocks={setOpenMatBlocks} label={""} />
+
+      <Text style={styles.sectionHeader}>Class Times</Text>
+      <TimeBlockPicker blocks={classTimeBlocks} setBlocks={setClassTimeBlocks} label={""} />
 
       {!isLoadingLocation && (
         <>
@@ -281,15 +315,14 @@ export default function SubmitScreen() {
               }}
               onDragEnd={(e) => {
                 const { latitude, longitude } = e.nativeEvent.coordinate;
-              
+
                 setFormData((prev) => ({
                   ...prev,
                   latitude,
                   longitude,
                 }));
-              
-                updateAddressFromCoords(latitude, longitude); // ← new line
-                
+
+                updateAddressFromCoords(latitude, longitude);
               }}
             />
           </MapView>
@@ -302,7 +335,9 @@ export default function SubmitScreen() {
       <TouchableOpacity
         style={[
           styles.submitButton,
-          Object.values(validationErrors).some(Boolean) && { backgroundColor: "#aaa" },
+          Object.values(validationErrors).some(Boolean) && {
+            backgroundColor: "#aaa",
+          },
         ]}
         onPress={handleSubmit}
         disabled={Object.values(validationErrors).some(Boolean)}
@@ -310,15 +345,17 @@ export default function SubmitScreen() {
         <Text style={styles.submitButtonText}>Submit Gym</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/(tabs)/map")}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.replace("/(tabs)/map")}
+      >
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
     </>
   )}
 />
 
-  );
-}
+)}
 
 const styles = StyleSheet.create({
   container: { 
@@ -389,4 +426,23 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     textAlign: "center",
   },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 20,
+    marginBottom: 10,
+    color: "#333",
+  },
+  
 });
+
+
+// import { View, Text } from "react-native";
+
+// export default function SubmitScreen() {
+//   return (
+//     <View>
+//       <Text>Submit screen works!</Text>
+//     </View>
+//   );
+// }
