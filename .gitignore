@@ -40,3 +40,7 @@ app-example
 assets/gyms.json
 assets/gyms.json
 assets/gyms_nozip.json
+scripts/uploadGyms.ts
+scripts/uploadGyms.mts
+scripts/uploadGyms.js
+scripts/uploadGyms.cjs
