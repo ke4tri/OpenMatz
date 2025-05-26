@@ -24,7 +24,7 @@ import Constants from "expo-constants";
 //FIREBASE
 import { signInAnonymously } from "firebase/auth";
 // import { auth } from "../../Firebase/firebaseConfig"; // adjust path if needed
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc,setDoc, doc } from "firebase/firestore";
 import { db } from "../../Firebase/firebaseConfig";
 
 
@@ -212,9 +212,15 @@ export default function SubmitScreen() {
 
   const handleSubmit = async () => {
     const errors: string[] = [];
-
+  
     if (!formData.name || !formData.latitude || !formData.longitude) {
       errors.push("Name, latitude, and longitude are required.");
+    }
+    if (!validateEmail(formData.email)) {
+      errors.push("Invalid email address.");
+    }
+    if (!validatePhone(formData.phone)) {
+      errors.push("Invalid phone number.");
     }
   
     if (errors.length > 0) {
@@ -222,20 +228,15 @@ export default function SubmitScreen() {
       return;
     }
   
-    const address = `${formData.city}, ${formData.state} ${formData.zip}, ${formData.country}`.trim();
-  
     const openMatTimes = openMatBlocks.map(
-      (b) =>
-        `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+      (b) => `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
     );
     const classTimes = classTimeBlocks.map(
-      (b) =>
-        `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+      (b) => `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
     );
   
-    const newGym = {
+    const baseGymData = {
       ...formData,
-      address,
       openMatTimes,
       classTimes,
       approved: false,
@@ -243,12 +244,20 @@ export default function SubmitScreen() {
     };
   
     try {
-      await addDoc(collection(db, "pendingGyms"), newGym);
+      // Add the gym and let Firestore generate the document ID
+      const docRef = await addDoc(collection(db, "pendingGyms"), baseGymData);
+  
+      // Update the same document with the ID included in the payload
+      await setDoc(doc(db, "pendingGyms", docRef.id), {
+        ...baseGymData,
+        id: docRef.id,
+      });
+  
       Alert.alert("Success", "Gym has been submitted for review.");
       router.replace("/(tabs)/map");
     } catch (e) {
-      console.error("🔥 Firestore error:", e);
-      Alert.alert("Error", "Failed to save gym to the cloud.");
+      console.error("❌ Firestore write failed:", e);
+      Alert.alert("Error", "Failed to save the submission.");
     }
   };
 
