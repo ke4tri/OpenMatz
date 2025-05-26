@@ -1,12 +1,13 @@
-import React, { useState, useRef, useMemo, useCallback } from "react";
-import { View, StyleSheet, Image, TouchableOpacity, Text } from "react-native";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { View, StyleSheet, Image, TouchableOpacity, Text, Alert } from "react-native";
 import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
-import rawGyms from "../../assets/gyms.json";
-import { useRouter } from "expo-router"; // ✅ add router for navigation
+import { useRouter } from "expo-router";
 import * as FileSystem from "expo-file-system";
-import { Alert } from "react-native";
 import Constants from "expo-constants";
+import type {Gym} from "../../types"
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../Firebase/firebaseConfig";
 
 console.log("🔐 Firebase Project ID:", Constants.expoConfig?.extra?.firebaseProjectId);
 
@@ -20,47 +21,78 @@ export default function MapScreen() {
     longitudeDelta: 0.1,
   });
 
-
-  const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
+  const [gyms, setGyms] = useState<Gym[]>([]);
 
   const markerRefs = useRef<{ [id: string]: MarkerRef | null }>({});
-  const gyms = useMemo(() => rawGyms.filter((g) => g.approved), []);
   const router = useRouter();
+
+  const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
 
   const onRegionChangeComplete = useCallback((r: Region) => {
     setRegion(r);
   }, []);
 
+  useEffect(() => {
+    const fetchGyms = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "gyms"));
+        const approvedGyms = snapshot.docs
+          .map((doc) => doc.data() as Gym)
+          .filter((gym) => gym.approved);
+  
+        setGyms(approvedGyms);
+  
+        // 👇 Tiny region adjustment to force re-render
+        setRegion((prev) => ({
+          ...prev,
+          latitudeDelta: prev.latitudeDelta + 0.0001,
+        }));
+  
+        setTimeout(() => {
+          setRegion((prev) => ({
+            ...prev,
+            latitudeDelta: prev.latitudeDelta - 0.0001,
+          }));
+        }, 50);
+      } catch (err) {
+        console.error("❌ Failed to fetch gyms from Firestore:", err);
+      }
+    };
+  
+    fetchGyms();
+  }, []);
+  
+
   const markers = useMemo(
     () =>
-      gyms.map((gym) => {
-        // Debug log
-        if (typeof gym !== "object" || !gym.latitude || !gym.longitude) {
-          console.error("🚨 Invalid gym data:", gym);
-          return null;
-        }
-  
-        const refCb = (ref: MarkerRef | null) => {
-          markerRefs.current[gym.id] = ref;
-        };
-  
-        const handlePress = () => {
-          Object.values(markerRefs.current).forEach((r) => r?.hideCallout());
-          markerRefs.current[gym.id]?.showCallout();
-        };
-  
-        return (
-          <GymMarker
-            key={gym.id}
-            gym={gym}
-            markerRef={refCb}
-            onPress={handlePress}
-          />
-        );
-      }).filter(Boolean), // Remove nulls
+      gyms
+        .map((gym) => {
+          if (typeof gym !== "object" || !gym.latitude || !gym.longitude) {
+            console.error("🚨 Invalid gym data:", gym);
+            return null;
+          }
+
+          const refCb = (ref: MarkerRef | null) => {
+            markerRefs.current[gym.id] = ref;
+          };
+
+          const handlePress = () => {
+            Object.values(markerRefs.current).forEach((r) => r?.hideCallout());
+            markerRefs.current[gym.id]?.showCallout();
+          };
+
+          return (
+            <GymMarker
+              key={gym.id}
+              gym={gym}
+              markerRef={refCb}
+              onPress={handlePress}
+            />
+          );
+        })
+        .filter(Boolean),
     [gyms]
   );
-  
 
   return (
     <View style={styles.container}>
@@ -72,6 +104,7 @@ export default function MapScreen() {
       >
         {markers}
       </MapView>
+
       {/* Floating Logo - unchanged from your working version */}
       <View style={styles.logoWrapper}>
         <Image
@@ -87,24 +120,26 @@ export default function MapScreen() {
       >
         <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
       </TouchableOpacity>
-{/* //DELETE THIS WHEN DONE */}
-      {/* <TouchableOpacity
-          style={[styles.floatingButton, { bottom: 90, backgroundColor: "#4CAF50" }]}
-          onPress={() => router.push("/view-pending")}
-        >
-          <Text style={styles.floatingButtonText}> View Pending</Text>
+
+      {/* View Pending / Clear (optional) */}
+      {/* 
+      <TouchableOpacity
+        style={[styles.floatingButton, { bottom: 90, backgroundColor: "#4CAF50" }]}
+        onPress={() => router.push("/view-pending")}
+      >
+        <Text style={styles.floatingButtonText}>View Pending</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-              style={[styles.floatingButton, { backgroundColor: "red", bottom: 150 }]}
-              onPress={async () => {
-                await FileSystem.writeAsStringAsync(pendingGymsPath, "[]");
-                Alert.alert("Cleared", "pending_gyms.json has been emptied.");
-              }}
-            >
-              <Text style={styles.floatingButtonText}>Clear Pending Gyms</Text>
-       </TouchableOpacity> */}
-
+        style={[styles.floatingButton, { backgroundColor: "red", bottom: 150 }]}
+        onPress={async () => {
+          await FileSystem.writeAsStringAsync(pendingGymsPath, "[]");
+          Alert.alert("Cleared", "pending_gyms.json has been emptied.");
+        }}
+      >
+        <Text style={styles.floatingButtonText}>Clear Pending Gyms</Text>
+      </TouchableOpacity>
+      */}
     </View>
   );
 }
@@ -118,7 +153,7 @@ const styles = StyleSheet.create({
   },
   logoWrapper: {
     position: "absolute",
-    top: 40, // adjust as needed
+    top: 40,
     left: 0,
     right: 0,
     alignItems: "center",
