@@ -15,23 +15,21 @@ import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { Gym } from "../types";
 import TimeBlockPicker, { TimeBlock } from "../components/TimeBlockPicker";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../Firebase/firebaseConfig";
+
 
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
 const fallbackLogo = require("../assets/fallbacks/BJJ_White_Belt.svg.png");
-
 const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
-
 const validateEmail = (email: string) =>
   /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) &&
   !shadyEmailDomains.some((d) => email.toLowerCase().includes(d));
-
 const validatePhone = (phone: string) =>
   /^\+?[0-9\s\-().]{7,}$/.test(phone.replace(/\D/g, ""));
-
 const UpdateGymScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -95,16 +93,32 @@ const UpdateGymScreen = () => {
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+  
     if (key === "email") {
       setValidationErrors((prev) => ({
         ...prev,
         email: validateEmail(value) ? "" : "Invalid email",
       }));
     }
+  
     if (key === "phone") {
       setValidationErrors((prev) => ({
         ...prev,
         phone: validatePhone(value) ? "" : "Invalid phone",
+      }));
+    }
+  
+    // Update timestamp for Firestore traceability
+    if (
+      [
+        "name", "email", "phone", "website",
+        "city", "state", "zip", "country",
+        "latitude", "longitude", "logo"
+      ].includes(key)
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        updatedAt: new Date().toISOString(),
       }));
     }
   };
@@ -134,14 +148,14 @@ const UpdateGymScreen = () => {
       Alert.alert("Invalid Phone Number", "Please enter a valid phone number.");
       return;
     }
-
+  
     const openMatTimes = openMatBlocks.map(b =>
       `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
     );
     const classTimes = classTimeBlocks.map(b =>
       `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
     );
-
+  
     const newGym: Gym = {
       ...formData,
       openMatTimes,
@@ -150,10 +164,18 @@ const UpdateGymScreen = () => {
       longitude: parseFloat(formData.longitude as any),
       approved: false,
     };
-
-    await saveToPendingJson(newGym);
-    Alert.alert("Success", "Gym submitted and pending approval!");
-    router.back();
+  
+    try {
+      await setDoc(doc(db, "pendingGyms", newGym.id), {
+        ...newGym,
+        updatedAt: new Date().toISOString(),
+      });
+      Alert.alert("Submitted", "Your update has been submitted for review.");
+      router.replace("/(tabs)/map");
+    } catch (err) {
+      console.error("❌ Firestore update failed:", err);
+      Alert.alert("Error", "Failed to submit update.");
+    }
   };
 
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
