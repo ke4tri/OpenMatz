@@ -108,7 +108,7 @@ export default function MapScreen() {
       {/* Floating Logo - unchanged from your working version */}
       <View style={styles.logoWrapper}>
         <Image
-          source={require("../../assets/appLogo/OpenMats_Color.png")}
+          source={require("../../assets/appLogo/MatTime Logo Final_Black.png")}
           style={styles.logo}
         />
       </View>
@@ -160,8 +160,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   logo: {
-    width: 640,
-    height: 160,
+    width: 900,
+    height: 225,
     resizeMode: "contain",
   },
   floatingButtonsWrapper: {
