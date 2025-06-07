@@ -303,12 +303,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   backButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    backgroundColor: "#007AFF",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
-    alignSelf: 'center',
-    marginBottom: 20,
+    alignSelf: "center",
+    marginVertical: 12,
+    width: 100
   },
   backButtonText: {
     color: 'white',

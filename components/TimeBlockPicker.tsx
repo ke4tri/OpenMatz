@@ -176,21 +176,23 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
               placeholderTextColor="#888"
             />
 
-            {!pickerMode && (
-              <View style={styles.modalButtons}>
-                {startConfirmed && endConfirmed && (
-                  <TouchableOpacity style={styles.modalButton} onPress={addBlock}>
-                    <Text style={styles.modalButtonText}>Add</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={styles.modalButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+{!pickerMode && (
+  <View style={styles.modalButtons}>
+    <TouchableOpacity
+      style={styles.modalButton}
+      onPress={() => setModalVisible(false)}
+    >
+      <Text style={styles.modalButtonText}>Cancel</Text>
+    </TouchableOpacity>
+
+    {startConfirmed && endConfirmed && (
+      <TouchableOpacity style={styles.modalButton} onPress={addBlock}>
+        <Text style={styles.modalButtonText}>Add</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+)}
+
 
             <CustomTimePicker
               visible={!!pickerMode}
