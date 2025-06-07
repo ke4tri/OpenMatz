@@ -9,6 +9,8 @@ import {
   ScrollView,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import CustomTimePicker from "./CustomTimePicker";
+
 
 export type TimeBlock = {
   day: string;
@@ -53,15 +55,29 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
   };
 
   const confirmPicker = () => {
+    const snappedTime = new Date(tempTime);
+    const minutes = snappedTime.getMinutes();
+    const snappedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
+  
+    // If rounding up to 0, also bump the hour forward
+    if (minutes >= 45) {
+      snappedTime.setHours(snappedTime.getHours() + 1);
+    }
+  
+    snappedTime.setMinutes(snappedMinutes);
+    snappedTime.setSeconds(0);
+  
     if (pickerMode === "start") {
-      setStartTime(tempTime);
+      setStartTime(snappedTime);
       setStartConfirmed(true);
     } else if (pickerMode === "end") {
-      setEndTime(tempTime);
+      setEndTime(snappedTime);
       setEndConfirmed(true);
     }
+  
     setPickerMode(null);
   };
+  
 
   const addBlock = () => {
     const newBlock: TimeBlock = {
@@ -176,20 +192,22 @@ const TimeBlockPicker: React.FC<Props> = ({ label, blocks, setBlocks }) => {
               </View>
             )}
 
-            {pickerMode && (
-              <DateTimePicker
-                value={tempTime}
-                mode="time"
-                is24Hour={false}
-                display="spinner"
-                textColor="black"
-                onChange={(event, selectedDate) => {
-                  if (selectedDate) {
-                    setTempTime(selectedDate);
-                  }
-                }}
-              />
-            )}
+            <CustomTimePicker
+              visible={!!pickerMode}
+              initialDate={tempTime}
+              onCancel={() => setPickerMode(null)}
+              onConfirm={(date) => {
+                if (pickerMode === "start") {
+                  setStartTime(date);
+                  setStartConfirmed(true);
+                } else if (pickerMode === "end") {
+                  setEndTime(date);
+                  setEndConfirmed(true);
+                }
+                setPickerMode(null);
+              }}
+              
+            />
 
             {pickerMode && (
               <TouchableOpacity
