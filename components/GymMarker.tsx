@@ -21,7 +21,13 @@ const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
   coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
   onPress={onPress} // shows callout
 >
-  <View style={styles.dotMarker} />
+<View
+  style={[
+    styles.dotMarker,
+    gym.openMatTimes.includes("None Listed") && { backgroundColor: "red" },
+  ]}
+/>
+
   <Callout
   tooltip
   onPress={() => {
