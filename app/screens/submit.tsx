@@ -351,7 +351,7 @@ export default function SubmitScreen() {
         onPress={handleSubmit}
         disabled={Object.values(validationErrors).some(Boolean)}
       >
-        <Text style={styles.submitButtonText}>Submit Gym</Text>
+        <Text style={styles.submitButtonText}>Submit</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -423,11 +423,12 @@ const styles = StyleSheet.create({
   },
   backButton: {
     backgroundColor: "#007AFF",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
     alignSelf: "center",
-    marginBottom: 20,
+    marginVertical: 12,
+    width: 95
   },
   backButtonText: {
     color: "white",
