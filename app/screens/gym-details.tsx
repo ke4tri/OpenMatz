@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 
+
 export default function GymDetailsScreen() {
   const { gym } = useLocalSearchParams();
 
@@ -27,6 +28,12 @@ export default function GymDetailsScreen() {
 
   const { name, logo, phone, email } = parsed;
   const router = useRouter();
+
+  const openInMaps = (address: string) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    Linking.openURL(url).catch((err) => console.error("Failed to open maps:", err));
+  };
+  
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -73,12 +80,17 @@ export default function GymDetailsScreen() {
     </TouchableOpacity>
   )}
 
-  {parsed.address && (
+{parsed.address && (
+  <TouchableOpacity onPress={() => openInMaps(parsed.address)}>
     <View style={styles.infoRow}>
       <Text style={styles.infoIcon}>📍</Text>
-      <Text style={styles.infoText}>{parsed.address}</Text>
+      <Text style={[styles.infoText, { color: "blue", textDecorationLine: "underline" }]}>
+        {parsed.address}
+      </Text>
     </View>
-  )}
+  </TouchableOpacity>
+)}
+
 
   {parsed.website && (
     <TouchableOpacity onPress={() => Linking.openURL(parsed.website)}>
