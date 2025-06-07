@@ -22,6 +22,7 @@ export default function MapScreen() {
   });
 
   const [gyms, setGyms] = useState<Gym[]>([]);
+  const mapRef = useRef<MapView>(null);
 
   const markerRefs = useRef<{ [id: string]: MarkerRef | null }>({});
   const router = useRouter();
@@ -77,8 +78,15 @@ export default function MapScreen() {
           };
 
           const handlePress = () => {
-            Object.values(markerRefs.current).forEach((r) => r?.hideCallout());
-            markerRefs.current[gym.id]?.showCallout();
+            // Object.values(markerRefs.current).forEach((r) => r?.hideCallout());
+            // markerRefs.current[gym.id]?.showCallout();
+            const offsetLat = region.latitudeDelta / 4; // Adjust this to your screen's aspect ratio
+            mapRef.current?.animateToRegion({
+              latitude: gym.latitude + offsetLat,
+              longitude: gym.longitude,
+              latitudeDelta: region.latitudeDelta,
+              longitudeDelta: region.longitudeDelta,
+            });
           };
 
           return (
@@ -97,6 +105,7 @@ export default function MapScreen() {
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         style={styles.map}
         initialRegion={region}
         showsUserLocation
@@ -160,8 +169,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   logo: {
-    width: 900,
-    height: 225,
+    width: 640,
+    height: 160,
     resizeMode: "contain",
   },
   floatingButtonsWrapper: {
