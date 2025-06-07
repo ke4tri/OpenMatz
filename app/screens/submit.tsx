@@ -61,6 +61,8 @@ export default function SubmitScreen() {
     website: "",
     approved: false,
   });
+  
+  
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [openMatBlocks, setOpenMatBlocks] = useState<TimeBlock[]>([]);
@@ -93,36 +95,6 @@ export default function SubmitScreen() {
   };
 
   useEffect(() => {
-    // signInAnonymously(auth)
-    // .then((userCredential) => {
-    //   console.log("✅ Signed in anonymously:", userCredential.user.uid);
-    // })
-    // .catch((error) => {
-    //   console.error("❌ Failed to sign in:", error);
-    // });
-
-    //************Another version of the above: 
-    //If you comment the below out you don't get the ERROR 
-    // ERROR  Error: Component auth has not been registered yet, js engine: hermes
-    // TODO: Switch to initializeAuth() + AsyncStorage when migrating to EAS build
-
-    // const login = async () => {
-    //   try {
-    //     const userCredential = await signInAnonymously(auth);
-    //     console.log("✅ Logged in anonymously:", userCredential.user.uid);
-    //   } catch (err) {
-    //     if (__DEV__) {
-    //       console.warn("⚠️ Firebase auth warning in Expo Go (dev only):", err);
-    //     } else {
-    //       throw err;
-    //     }
-    //   }
-    // };
-  
-    // login();
-  
-   //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -190,6 +162,7 @@ export default function SubmitScreen() {
           state: info.region || "",
           zip: info.postalCode || "",
           country: info.country || "",
+          address: `${info.name || ""} ${info.street || ""} ${info.city || ""}, ${info.region || ""} ${info.postalCode || ""}`,
         }));
         return;
       }
@@ -197,7 +170,6 @@ export default function SubmitScreen() {
       console.warn("Expo reverse geocoding failed, trying OpenCage...", err);
     }
   
-    // 🚨 fallback to OpenCage
     const fallback = await fetchFromOpenCage(latitude, longitude);
     if (fallback) {
       setFormData((prev) => ({
@@ -206,6 +178,7 @@ export default function SubmitScreen() {
         state: fallback.state,
         zip: fallback.zip,
         country: fallback.country,
+        address: `${fallback.city}, ${fallback.state} ${fallback.zip}, ${fallback.country}`,
       }));
     }
   };
@@ -235,19 +208,38 @@ export default function SubmitScreen() {
       (b) => `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
     );
   
+    const fetchIP = async (): Promise<string> => {
+      try {
+        const res = await fetch("https://corsproxy.io/?https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip;
+      } catch (err) {
+        console.warn("❌ Failed to fetch IP:", err);
+        return "Unknown";
+      }
+    };
+    
+  
+    const ip = await fetchIP();
+  
     const baseGymData = {
       ...formData,
       openMatTimes,
       classTimes,
       approved: false,
       createdAt: new Date().toISOString(),
+      submittedAt: new Date().toISOString(),
+      submittedByIP: ip,
+      submittedBy: {
+        name: formData.submittedByName || "", // Add to form if desired
+        email: formData.email,
+        phone: formData.phone,
+      },
     };
   
     try {
-      // Add the gym and let Firestore generate the document ID
       const docRef = await addDoc(collection(db, "pendingGyms"), baseGymData);
   
-      // Update the same document with the ID included in the payload
       await setDoc(doc(db, "pendingGyms", docRef.id), {
         ...baseGymData,
         id: docRef.id,
@@ -260,7 +252,7 @@ export default function SubmitScreen() {
       Alert.alert("Error", "Failed to save the submission.");
     }
   };
-
+  
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
 
 

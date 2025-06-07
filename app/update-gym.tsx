@@ -17,6 +17,7 @@ import type { Gym } from "../types";
 import TimeBlockPicker, { TimeBlock } from "../components/TimeBlockPicker";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../Firebase/firebaseConfig";
+import * as Location from "expo-location";
 
 
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
@@ -46,11 +47,71 @@ const UpdateGymScreen = () => {
     approved: false,
     pendingUpdate: true,
     updatedFromId: "",
+    submittedByName: "", // <-- Add this
   });
 
   const [openMatBlocks, setOpenMatBlocks] = useState<TimeBlock[]>([]);
   const [classTimeBlocks, setClassTimeBlocks] = useState<TimeBlock[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const fetchFromOpenCage = async (latitude: number, longitude: number) => {
+    try {
+      const response = await axios.get("https://api.opencagedata.com/geocode/v1/json", {
+        params: {
+          key: Constants.expoConfig?.extra?.opencageApiKey,
+          q: `${latitude},${longitude}`,
+          no_annotations: 1,
+        },
+      });
+  
+      const result = response.data?.results?.[0];
+      const components = result?.components || {};
+  
+      return {
+        city: components.city || components.town || components.village || "",
+        state: components.state || "",
+        zip: components.postcode || "",
+        country: components.country || "",
+      };
+    } catch (error) {
+      console.warn("OpenCage fallback failed", error);
+      return null;
+    }
+  };
+  
+  const updateAddressFromCoords = async (latitude: number, longitude: number) => {
+    try {
+      const result = await Location.reverseGeocodeAsync({ latitude, longitude });
+  
+      if (result && result.length > 0) {
+        const info = result[0];
+        setFormData((prev) => ({
+          ...prev,
+          city: info.city || "",
+          state: info.region || "",
+          zip: info.postalCode || "",
+          country: info.country || "",
+          address: `${info.name || ""} ${info.street || ""} ${info.city || ""}, ${info.region || ""} ${info.postalCode || ""}`,
+        }));
+        return;
+      }
+    } catch (err) {
+      console.warn("Expo reverse geocoding failed, trying OpenCage...", err);
+    }
+  
+    const fallback = await fetchFromOpenCage(latitude, longitude);
+    if (fallback) {
+      setFormData((prev) => ({
+        ...prev,
+        city: fallback.city,
+        state: fallback.state,
+        zip: fallback.zip,
+        country: fallback.country,
+        address: `${fallback.city}, ${fallback.state} ${fallback.zip}, ${fallback.country}`,
+      }));
+    }
+  };
+  
 
   useEffect(() => {
     if (params.existingGym) {
@@ -135,6 +196,17 @@ const UpdateGymScreen = () => {
     }
   };
 
+  const fetchIP = async (): Promise<string> => {
+    try {
+      const res = await fetch("https://corsproxy.io/?https://api.ipify.org?format=json");
+      const data = await res.json();
+      return data.ip;
+    } catch (err) {
+      console.warn("❌ Failed to fetch IP:", err);
+      return "Unknown";
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.name || !formData.latitude || !formData.longitude) {
       Alert.alert("Missing required fields", "Name, latitude, and longitude are required.");
@@ -155,6 +227,9 @@ const UpdateGymScreen = () => {
     const classTimes = classTimeBlocks.map(b =>
       `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
     );
+
+    const ip = await fetchIP();
+
   
     const newGym: Gym = {
       ...formData,
@@ -163,6 +238,13 @@ const UpdateGymScreen = () => {
       latitude: parseFloat(formData.latitude as any),
       longitude: parseFloat(formData.longitude as any),
       approved: false,
+      submittedAt: new Date().toISOString(),
+      submittedByIP: ip,
+      submittedBy: {
+        name: formData.submittedByName || "", // Use a better fallback if needed
+        email: formData.email,
+        phone: formData.phone,
+      },
     };
   
     try {
@@ -197,6 +279,7 @@ const UpdateGymScreen = () => {
             placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
             value={String(formData[key as keyof typeof formData] || "")}
             onChangeText={(text) => handleChange(key, text)}
+            placeholderTextColor="#000" // ← Add this line
             style={[styles.input, validationErrors[key] ? styles.errorBorder : null]}
           />
           {validationErrors[key] ? (
@@ -232,13 +315,17 @@ const UpdateGymScreen = () => {
             latitude: formData.latitude,
             longitude: formData.longitude,
           }}
-          onDragEnd={(e) =>
+          onDragEnd={async (e) => {
+            const { latitude, longitude } = e.nativeEvent.coordinate;
+          
             setFormData((prev) => ({
               ...prev,
-              latitude: e.nativeEvent.coordinate.latitude,
-              longitude: e.nativeEvent.coordinate.longitude,
-            }))
-          }
+              latitude,
+              longitude,
+            }));
+          
+            await updateAddressFromCoords(latitude, longitude); // 💥 Now same as submit
+          }}
         />
       </MapView>
       <Text style={{ textAlign: "center", marginVertical: 5 }}>

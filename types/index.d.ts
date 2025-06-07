@@ -7,17 +7,18 @@ export interface Gym {
   longitude: number;
   logo: string;
   openMatTimes: string[];
-  classTimes?: string[]; // ✅ Add this line
+  classTimes?: string[];
   address: string;
   email: string;
   phone: string;
   approved: boolean;
-}
 
-// Add this
-export type GymForm = Omit<Gym, "latitude" | "longitude" | "openMatTimes" | "classTimes"> & {
-  latitude: string;
-  longitude: string;
-  openMatTimes: string | string[];
-  classTimes?: string | string[]; // ✅ Add this line too
-};
+  // ✅ Add these optional metadata fields:
+  submittedAt?: string;
+  submittedByIP?: string;
+  submittedBy?: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+}
