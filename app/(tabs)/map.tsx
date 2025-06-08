@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   logo: {
-    width: 640,
-    height: 160,
+    width: 940,
+    height: 235,
     resizeMode: "contain",
   },
   floatingButtonsWrapper: {
