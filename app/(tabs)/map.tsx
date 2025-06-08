@@ -8,6 +8,9 @@ import Constants from "expo-constants";
 import type {Gym} from "../../types"
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../Firebase/firebaseConfig";
+import AnimatedClock from "../../components/AnimatedClock"; // adjust path if needed
+import HeaderLogo from "../../components/HeaderLogo"; // adjust path if needed
+import { Dimensions } from "react-native";
 
 console.log("🔐 Firebase Project ID:", Constants.expoConfig?.extra?.firebaseProjectId);
 
@@ -23,7 +26,7 @@ export default function MapScreen() {
 
   const [gyms, setGyms] = useState<Gym[]>([]);
   const mapRef = useRef<MapView>(null);
-
+ 
   const markerRefs = useRef<{ [id: string]: MarkerRef | null }>({});
   const router = useRouter();
 
@@ -104,61 +107,72 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        initialRegion={region}
-        showsUserLocation
-        onRegionChangeComplete={onRegionChangeComplete}
-      >
-        {markers}
-      </MapView>
-
-      {/* Floating Logo - unchanged from your working version */}
-      <View style={styles.logoWrapper}>
-        <Image
-          source={require("../../assets/appLogo/MatTime Logo Final_Black.png")}
-          style={styles.logo}
-        />
-      </View>
-
-      {/* Floating Submit Button */}
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => router.push("/screens/submit")}
-      >
-        <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
-      </TouchableOpacity>
-
-      {/* View Pending / Clear (optional) */}
-      {/* 
-      <TouchableOpacity
-        style={[styles.floatingButton, { bottom: 90, backgroundColor: "#4CAF50" }]}
-        onPress={() => router.push("/view-pending")}
-      >
-        <Text style={styles.floatingButtonText}>View Pending</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.floatingButton, { backgroundColor: "red", bottom: 150 }]}
-        onPress={async () => {
-          await FileSystem.writeAsStringAsync(pendingGymsPath, "[]");
-          Alert.alert("Cleared", "pending_gyms.json has been emptied.");
-        }}
-      >
-        <Text style={styles.floatingButtonText}>Clear Pending Gyms</Text>
-      </TouchableOpacity>
-      */}
+    {/* Spinning Clock Logo */}
+    <View style={styles.logoRow}>
+      <Image source={require("../../assets/appLogo/Mat.png")} style={styles.textLogo} />
+      <AnimatedClock />
+      <Image source={require("../../assets/appLogo/Times.png")} style={styles.textLogo} />
     </View>
+
+    <MapView
+      ref={mapRef}
+      style={styles.map}
+      initialRegion={region}
+      showsUserLocation
+      onRegionChangeComplete={onRegionChangeComplete}
+    >
+      {markers}
+    </MapView>
+  
+    {/* Floating Static Logo */}
+    {/* <View style={styles.logoWrapper}>
+      <Image
+        source={require("../../assets/appLogo/MatTime Logo Final.png")}
+        style={styles.logo}
+      />
+    </View> */}
+  
+    {/* Floating Submit Button */}
+    <TouchableOpacity
+      style={styles.floatingButton}
+      onPress={() => router.push("/screens/submit")}
+    >
+      <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
+    </TouchableOpacity>
+  </View>
   );
 }
-
+const screenWidth = Dimensions.get("window").width;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   map: {
     flex: 1,
+  },
+  headerLogoWrapper: {
+    position: "absolute",
+    top: 40,  // adjust based on how far from the top you want it
+    alignSelf: "center", // centers horizontally
+    zIndex: 10, // makes sure it’s above the map
+  },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+    top: screenWidth * 0.20, // Responsive vertical position of the logo on map
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    paddingHorizontal: 20,
+  },
+  
+  textLogo: {
+    width: screenWidth * 0.25,
+    height: screenWidth * 0.1,
+    resizeMode: "contain",
+    marginHorizontal: 8,
   },
   logoWrapper: {
     position: "absolute",
@@ -193,5 +207,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  clockWrapper: {
+    position: "absolute",
+    top: 80,
+    alignSelf: "center",
+    zIndex: 999, // Ensure it's above the map
   },
 });
