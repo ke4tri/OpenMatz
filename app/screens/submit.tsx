@@ -26,6 +26,8 @@ import { signInAnonymously } from "firebase/auth";
 // import { auth } from "../../Firebase/firebaseConfig"; // adjust path if needed
 import { collection, addDoc,setDoc, doc } from "firebase/firestore";
 import { db } from "../../Firebase/firebaseConfig";
+import { currentTier } from "../../constants/tiers"; // 🔐 your tier system
+import UpgradePrompt from "../../components/UpgradePrompt"; // 🛑 fallback prompt
 
 
 const OPENCAGE_API_KEY = Constants.expoConfig?.extra?.opencageApiKey;
@@ -60,7 +62,9 @@ export default function SubmitScreen() {
     phone: "",
     website: "",
     approved: false,
+    submittedByName: "",  // ✅ add this
   });
+  
   
   
 
@@ -255,8 +259,15 @@ export default function SubmitScreen() {
   
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
 
-
+  //Uncomment the below inorder to lock feature
+  // if (currentTier === "free") {
+  //   return (
+  //     <UpgradePrompt onBack={() => router.replace("/(tabs)/map")} />
+  //   );
+  // }
+  
   return (
+    
 <KeyboardAwareFlatList
   data={[1]} // dummy item to trigger rendering
   keyExtractor={() => "form"}
