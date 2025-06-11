@@ -18,6 +18,10 @@ import TimeBlockPicker, { TimeBlock } from "../components/TimeBlockPicker";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "../Firebase/firebaseConfig";
 import * as Location from "expo-location";
+import { currentTier } from "../constants/tiers";
+import UpgradePrompt from "../components/UpgradePrompt";
+import axios from "axios";
+import Constants from "expo-constants";
 
 
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
@@ -262,6 +266,11 @@ const UpdateGymScreen = () => {
 
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
 
+  //Uncomment the below inorder to lock feature
+  // if (currentTier === "free") {
+  //   return <UpgradePrompt onBack={() => router.back()} />;
+  // }
+  
   return (
     <ScrollView contentContainerStyle={styles.container}>
 
