@@ -12,8 +12,16 @@ type Props = {
   onPress?: () => void;
 };
 
-const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
+
+
+  const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
   const router = useRouter();
+
+  const dotColor =
+  gym.openMatTimes?.[0]?.includes("None Listed") ? "red" :
+  gym.membershipRequired ? "yellow" :
+  "blue";
+
 
   return (
 <Marker
@@ -21,12 +29,14 @@ const GymMarker: React.FC<Props> = React.memo(({ gym, markerRef, onPress }) => {
   coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
   onPress={onPress} // shows callout
 >
-<View
+{/* <View
   style={[
     styles.dotMarker,
     gym.openMatTimes.includes("None Listed") && { backgroundColor: "red" },
   ]}
-/>
+/> */}
+<View style={[styles.dotMarker, { backgroundColor: dotColor }]} />
+
 
   <Callout
   tooltip

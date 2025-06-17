@@ -1,4 +1,5 @@
 export interface Gym {
+  membershipRequired: any;
   id: string;
   name: string;
   city: string;
