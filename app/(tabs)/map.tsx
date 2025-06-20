@@ -100,7 +100,7 @@ export default function MapScreen() {
       {/* Floating Submit button */}
       <TouchableOpacity
         style={styles.floatingButton}
-        onPress={() => router.push("/drawer/submit")}
+        onPress={() => router.push("/screens/submit")}
       >
         <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
       </TouchableOpacity>
