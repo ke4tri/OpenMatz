@@ -45,3 +45,5 @@ scripts/uploadGyms.mts
 scripts/uploadGyms.js
 scripts/uploadGyms.cjs
 assets/gyms_old.json
+scripts/queryBrazilGyms.js
+scripts/queryBrazilGyms.mjs
