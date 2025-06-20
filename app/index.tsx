@@ -2,14 +2,39 @@ import React, { useEffect } from "react";
 import { View, Image, StyleSheet } from "react-native";
 import AnimatedClock from "../components/AnimatedClock";
 import { useRouter } from "expo-router";
+import { useLocation } from "../components/LocationContext";
+import * as Location from "expo-location";
 
 const SplashScreen = () => {
   const router = useRouter();
-
+const { setLocation } = useLocation();
   useEffect(() => {
+    const fetchLocation = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        const cachedLoc = await Location.getLastKnownPositionAsync({});
+        if (cachedLoc) {
+          setLocation({
+            latitude: cachedLoc.coords.latitude,
+            longitude: cachedLoc.coords.longitude,
+          });
+          console.log("✅ Using cached location");
+        } else {
+          const loc = await Location.getCurrentPositionAsync({});
+          setLocation({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          });
+          console.log("✅ Using fresh location");
+        }
+      }
+    };
+
+    fetchLocation();
+
     const timeout = setTimeout(() => {
-      router.replace("/(tabs)/map"); // Or whatever your main screen is
-    }, 3000); // Wait 3 seconds
+      router.replace("/(tabs)/map");
+    }, 3000);
 
     return () => clearTimeout(timeout);
   }, []);
