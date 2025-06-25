@@ -94,7 +94,7 @@ export default function MapScreen() {
       <View style={styles.logoRow}>
         <Image source={require("../../assets/appLogo/Mat.png")} style={styles.textLogo} />
         <AnimatedClock />
-        <Image source={require("../../assets/appLogo/Times.png")} style={styles.textLogo} />
+        <Image source={require("../../assets/appLogo/Times2.png")} style={styles.textLogo} />
       </View>
 
       {/* Floating Submit button */}
