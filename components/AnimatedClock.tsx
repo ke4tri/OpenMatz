@@ -37,32 +37,32 @@ const ClockComponent = () => {
     <View style={styles.wrapper}>
       {/* Center base image */}
       <Animated.Image
-        source={require("../assets/appLogo/Center.png")}
+        source={require("../assets/appLogo/Pie2.png")}
         style={[styles.base, { transform: [{ rotate: rotate(centerAnim) }] }]}
       />
 
       {/* Purple hand */}
-      <View style={styles.handWrapper}>
+      {/* <View style={styles.handWrapper}>
         <Animated.Image
           source={require("../assets/appLogo/Purple.png")}
           style={[styles.hand, { transform: [{ rotate: rotate(purpleAnim) }] }]}
         />
-      </View>
+      </View> */}
 
       {/* Brown hand */}
-      <View style={styles.handWrapper}>
+      {/* <View style={styles.handWrapper}>
         <Animated.Image
           source={require("../assets/appLogo/Brown.png")}
           style={[styles.hand, { transform: [{ rotate: rotate(brownAnim) }] }]}
         />
-      </View>
+      </View> */}
             {/* Blue hand */}
-            <View style={styles.handWrapper}>
+            {/* <View style={styles.handWrapper}>
         <Animated.Image
           source={require("../assets/appLogo/Blue.png")}
           style={[styles.hand, { transform: [{ rotate: rotate(blueAnim) }] }]}
         />
-      </View>
+      </View> */}
     </View>
   );
 };
