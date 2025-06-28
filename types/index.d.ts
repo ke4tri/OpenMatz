@@ -22,4 +22,8 @@ export interface Gym {
     email: string;
     phone: string;
   };
+
+  // ✅ Proximity fields
+  locationVerified?: boolean;
+  distanceFromGym?: number | null;
 }

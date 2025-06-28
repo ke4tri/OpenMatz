@@ -24,6 +24,40 @@ import axios from "axios";
 import Constants from "expo-constants";
 
 
+//Proximity to Gym
+function getDistanceInMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371000; // Earth's radius in meters
+  const toRad = (value: number) => (value * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function formatDistance(meters: number): string {
+  const feet = meters * 3.28084;
+  if (feet < 1000) {
+    return `${Math.round(feet)} feet`;
+  } else {
+    const miles = feet / 5280;
+    return `${miles.toFixed(2)} miles`;
+  }
+}
+
+
+
+
 const pendingGymsPath = FileSystem.documentDirectory + "pending_gyms.json";
 const fallbackLogo = require("../assets/fallbacks/BJJ_White_Belt.svg.png");
 const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
@@ -35,24 +69,46 @@ const validatePhone = (phone: string) =>
 const UpdateGymScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    city: "",
-    state: "",
-    logo: "",
-    latitude: 0,
-    longitude: 0,
-    address: "",
-    email: "",
-    phone: "",
-    website: "",
-    country: "",
-    approved: false,
-    pendingUpdate: true,
-    updatedFromId: "",
-    submittedByName: "", // <-- Add this
-  });
+const [formData, setFormData] = useState<{
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  logo: string;
+  latitude: number;
+  longitude: number;
+  address: string;
+  email: string;
+  phone: string;
+  website: string;
+  country: string;
+  approved: boolean;
+  pendingUpdate: boolean;
+  updatedFromId: string;
+  submittedByName: string;
+  locationVerified: boolean;
+  distanceFromGym: number | null;
+}>(/* initial value below */ {
+  id: "",
+  name: "",
+  city: "",
+  state: "",
+  logo: "",
+  latitude: 0,
+  longitude: 0,
+  address: "",
+  email: "",
+  phone: "",
+  website: "",
+  country: "",
+  approved: false,
+  pendingUpdate: true,
+  updatedFromId: "",
+  submittedByName: "",
+  locationVerified: false,
+  distanceFromGym: null,
+});
+
 
   const [openMatBlocks, setOpenMatBlocks] = useState<TimeBlock[]>([]);
   const [classTimeBlocks, setClassTimeBlocks] = useState<TimeBlock[]>([]);
@@ -116,45 +172,125 @@ const UpdateGymScreen = () => {
     }
   };
   
+useEffect(() => {
+  if (params.existingGym) {
+    try {
+      const gym: Gym = JSON.parse(params.existingGym as string);
 
-  useEffect(() => {
-    if (params.existingGym) {
-      try {
-        const gym: Gym = JSON.parse(params.existingGym as string);
-        setFormData({
-          ...formData,
-          ...gym,
-          latitude: gym.latitude,
-          longitude: gym.longitude,
-          pendingUpdate: true,
-          updatedFromId: gym.id,
-        });
+      // ✅ Load gym into form state
+      setFormData((prev) => ({
+        ...prev,
+        ...gym,
+        latitude: gym.latitude,
+        longitude: gym.longitude,
+        pendingUpdate: true,
+        updatedFromId: gym.id,
+      }));
 
-        if (Array.isArray(gym.openMatTimes)) {
-          const parsedOM = gym.openMatTimes.map(parseTimeBlock);
-          setOpenMatBlocks(parsedOM);
-        }
-        if (Array.isArray(gym.classTimes)) {
-          const parsedCT = gym.classTimes.map(parseTimeBlock);
-          setClassTimeBlocks(parsedCT);
-        }
-      } catch (e) {
-        console.warn("Failed to parse existingGym", e);
+      // ✅ Parse open mat and class times if present
+      if (Array.isArray(gym.openMatTimes)) {
+        const parsedOM = gym.openMatTimes
+          .filter(t => t !== "None Listed")
+          .map(parseTimeBlock);
+        setOpenMatBlocks(parsedOM);
       }
-    }
-  }, [params.existingGym]);
+      if (Array.isArray(gym.classTimes)) {
+        const parsedCT = gym.classTimes
+          .filter(t => t !== "None Listed")
+          .map(parseTimeBlock);
+        setClassTimeBlocks(parsedCT);
+      }
 
-  const parseTimeBlock = (entry: string): TimeBlock => {
-    const [dayPart, rest] = entry.split(": ");
-    const [range, note] = rest?.split("(") ?? [rest, ""];
-    const [startTime, endTime] = range.split("-").map((s) => s.trim());
-    return {
-      day: dayPart,
-      startTime,
-      endTime: endTime?.replace(")", "") || "",
-      note: note?.replace(")", "") || "",
-    };
+      // ✅ Fetch current location and compare distance to gym
+      (async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === "granted") {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: 3 });
+          const distance = getDistanceInMeters(
+            loc.coords.latitude,
+            loc.coords.longitude,
+            gym.latitude,
+            gym.longitude
+          );
+
+          setFormData((prev) => ({
+            ...prev,
+            locationVerified: distance < 400, // meters (~0.25 miles)
+            distanceFromGym: Math.round(distance),
+          }));
+        } else {
+          console.warn("Location permission not granted");
+        }
+      })();
+    } catch (e) {
+      console.warn("Failed to parse existingGym", e);
+    }
+  }
+}, [params.existingGym]);
+
+
+const parseTimeBlock = (entry: string): TimeBlock => {
+  let day = "";
+  let startTime = "";
+  let endTime = "";
+  let note = "";
+
+  try {
+    const hasDash = entry.includes("-");
+    const isClosed = entry.toLowerCase().includes("closed");
+
+    if (isClosed) {
+      console.warn("❌ Closed day, skipping:", entry);
+      return {
+        day: entry.split(":")[0].trim() || "Unknown",
+        startTime: "",
+        endTime: "",
+        note: "Closed",
+      };
+    }
+
+    if (hasDash && entry.includes(":")) {
+      // ✅ Colon format: split ONLY on the first colon
+      const colonIndex = entry.indexOf(":");
+      const dayRaw = entry.slice(0, colonIndex).trim();
+      const rest = entry.slice(colonIndex + 1).trim();
+
+      const [timeRange, notePart] = rest.split("(");
+      const [start, end] = timeRange.split("-").map(s => s.trim());
+
+      day = dayRaw;
+      startTime = start;
+      endTime = end;
+      note = notePart?.replace(")", "").trim() || "";
+
+      console.log("✅ Parsed colon format:", { entry, day, startTime, endTime, note });
+    } else if (hasDash) {
+      // ✅ Fallback space format
+      const match = entry.match(/^(\w+)\s+([0-9:APMapm]+)\s*-\s*([0-9:APMapm]+)/);
+      if (match) {
+        day = match[1].trim();
+        startTime = match[2].trim();
+        endTime = match[3].trim();
+        note = "";
+
+        console.log("✅ Parsed space format:", { entry, day, startTime, endTime });
+      }
+    } else {
+      console.warn("❌ Unrecognized open mat time format:", entry);
+    }
+  } catch (e) {
+    console.warn("🚨 Failed to parse time block:", entry, e);
+  }
+
+  return {
+    day,
+    startTime,
+    endTime,
+    note,
   };
+};
+
+
 
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -225,31 +361,41 @@ const UpdateGymScreen = () => {
       return;
     }
   
-    const openMatTimes = openMatBlocks.map(b =>
-      `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
-    );
-    const classTimes = classTimeBlocks.map(b =>
-      `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
-    );
+const openMatTimes = openMatBlocks
+  .filter(b => b.day && b.startTime && b.endTime)
+  .map(b =>
+    `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+  );
+
+const classTimes = classTimeBlocks
+  .filter(b => b.day && b.startTime && b.endTime)
+  .map(b =>
+    `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+  );
+
 
     const ip = await fetchIP();
 
   
-    const newGym: Gym = {
-      ...formData,
-      openMatTimes,
-      classTimes,
-      latitude: parseFloat(formData.latitude as any),
-      longitude: parseFloat(formData.longitude as any),
-      approved: false,
-      submittedAt: new Date().toISOString(),
-      submittedByIP: ip,
-      submittedBy: {
-        name: formData.submittedByName || "", // Use a better fallback if needed
-        email: formData.email,
-        phone: formData.phone,
-      },
-    };
+const newGym: Gym = {
+  ...formData,
+  openMatTimes,
+  classTimes,
+  latitude: parseFloat(formData.latitude as any),
+  longitude: parseFloat(formData.longitude as any),
+  approved: false,
+  submittedAt: new Date().toISOString(),
+  submittedByIP: ip,
+  submittedBy: {
+    name: formData.submittedByName || "",
+    email: formData.email,
+    phone: formData.phone,
+  },
+  locationVerified: formData.locationVerified,
+  distanceFromGym: formData.distanceFromGym,
+  membershipRequired: undefined,
+};
+
   
     try {
       await setDoc(doc(db, "pendingGyms", newGym.id), {
@@ -308,35 +454,45 @@ const UpdateGymScreen = () => {
         blocks={classTimeBlocks}
         setBlocks={setClassTimeBlocks}
       />
+     {formData.distanceFromGym !== null && (
+  <Text style={{
+    textAlign: "center",
+    marginVertical: 6,
+    fontWeight: "600",
+    color: formData.locationVerified ? "green" : "orange"
+  }}>
+    {formData.locationVerified
+      ? `✅ Location Verified (${formatDistance(formData.distanceFromGym)})`
+      : `⚠️ You are ${formatDistance(formData.distanceFromGym)} from the gym.\nYour update can still be submitted, but for faster vetting times, please submit from the gym location.`}
+  </Text>
+)}
 
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: formData.latitude || 37.78825,
-          longitude: formData.longitude || -122.4324,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }}
-      >
-        <Marker
-          draggable
-          coordinate={{
-            latitude: formData.latitude,
-            longitude: formData.longitude,
-          }}
-          onDragEnd={async (e) => {
-            const { latitude, longitude } = e.nativeEvent.coordinate;
-          
-            setFormData((prev) => ({
-              ...prev,
-              latitude,
-              longitude,
-            }));
-          
-            await updateAddressFromCoords(latitude, longitude); // 💥 Now same as submit
-          }}
-        />
-      </MapView>
+
+<MapView
+  style={styles.map}
+  initialRegion={{
+    latitude: formData.latitude || 37.78825,
+    longitude: formData.longitude || -122.4324,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  }}
+>
+  <Marker
+    draggable
+    coordinate={{
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+    }}
+    onDragEnd={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        latitude: e.nativeEvent.coordinate.latitude,
+        longitude: e.nativeEvent.coordinate.longitude,
+      }))
+    }
+  />
+</MapView>
+
       <Text style={{ textAlign: "center", marginVertical: 5 }}>
         Hold down red pin to adjust location
       </Text>
