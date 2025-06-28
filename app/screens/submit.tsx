@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   Image,
-  Platform
+  Platform,
+  StatusBar,
+  Switch
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import * as Location from "expo-location";
@@ -31,7 +33,6 @@ import UpgradePrompt from "../../components/UpgradePrompt"; // 🛑 fallback pro
 
 
 const OPENCAGE_API_KEY = Constants.expoConfig?.extra?.opencageApiKey;
-console.log("🔐 OpenCage API Key:", OPENCAGE_API_KEY);
 
 const shadyEmailDomains = ["tempmail", "yopmail", "mailinator", "dispostable"];
 const fallbackLogo = require("../../assets/fallbacks/BJJ_White_Belt.svg.png");
@@ -63,6 +64,7 @@ export default function SubmitScreen() {
     website: "",
     approved: false,
     submittedByName: "",  // ✅ add this
+    membershipRequired: false,
   });
   
   
@@ -239,6 +241,7 @@ export default function SubmitScreen() {
         email: formData.email,
         phone: formData.phone,
       },
+      membershipRequired: formData.membershipRequired ?? false,
     };
   
     try {
@@ -266,108 +269,112 @@ export default function SubmitScreen() {
   //   );
   // }
   
-  return (
-    
-<KeyboardAwareFlatList
-  data={[1]} // dummy item to trigger rendering
-  keyExtractor={() => "form"}
-  contentContainerStyle={styles.container}
-  renderItem={() => (
-    <>
-      {[
-        "name",
-        "logo",
-        "city",
-        "state",
-        "zip",
-        "country",
-        "email",
-        "phone",
-        "website",
-      ].map((key) => (
-        <View key={key}>
-          <TextInput
-            placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
-            value={String(formData[key as keyof typeof formData] || "")}
-            onChangeText={(text) => handleChange(key, text)}
-            style={[
-              styles.input,
-              validationErrors[key] ? styles.errorBorder : null,
-            ]}
-            placeholderTextColor="#999"
-          />
-          {validationErrors[key] ? (
-            <Text style={styles.errorText}>{validationErrors[key]}</Text>
-          ) : null}
-        </View>
-      ))}
-
-      <Text style={styles.sectionHeader}>Open Mat Times</Text>
-      <TimeBlockPicker blocks={openMatBlocks} setBlocks={setOpenMatBlocks} label={""} />
-
-      <Text style={styles.sectionHeader}>Class Times</Text>
-      <TimeBlockPicker blocks={classTimeBlocks} setBlocks={setClassTimeBlocks} label={""} />
-
-      {!isLoadingLocation && (
+return (
+  <>
+    <StatusBar barStyle="dark-content" />
+    <KeyboardAwareFlatList
+      data={[1]} // dummy item to trigger rendering
+      keyExtractor={() => "form"}
+      contentContainerStyle={[styles.container, { backgroundColor: "#f8f8f8" }]}
+      renderItem={() => (
         <>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: formData.latitude,
-              longitude: formData.longitude,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.01,
-            }}
-          >
-            <Marker
-              draggable
-              coordinate={{
-                latitude: formData.latitude,
-                longitude: formData.longitude,
-              }}
-              onDragEnd={(e) => {
-                const { latitude, longitude } = e.nativeEvent.coordinate;
+          {[ "name", "logo", "city", "state", "zip", "country", "email", "phone", "website" ].map((key) => (
+            <View key={key}>
+              <TextInput
+                placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
+                value={String(formData[key as keyof typeof formData] || "")}
+                onChangeText={(text) => handleChange(key, text)}
+                style={[
+                  styles.input,
+                  validationErrors[key] ? styles.errorBorder : null,
+                ]}
+                placeholderTextColor="#999"
+              />
+              {validationErrors[key] ? (
+                <Text style={styles.errorText}>{validationErrors[key]}</Text>
+              ) : null}
+            </View>
+          ))}
 
-                setFormData((prev) => ({
-                  ...prev,
-                  latitude,
-                  longitude,
-                }));
+          <Text style={styles.sectionHeader}>Open Mat Times</Text>
+          <TimeBlockPicker blocks={openMatBlocks} setBlocks={setOpenMatBlocks} label={""} />
 
-                updateAddressFromCoords(latitude, longitude);
-              }}
+          <View style={{ marginVertical: 16, alignItems: "center" }}>
+            <Text style={{ fontSize: 16, marginBottom: 6, textAlign: "center" }}>
+              Membership Required for Drop Ins and Open Mat?
+            </Text>
+            <Switch
+              value={formData.membershipRequired}
+              onValueChange={(val) =>
+                setFormData((prev) => ({ ...prev, membershipRequired: val }))
+              }
             />
-          </MapView>
-          <Text style={{ textAlign: "center", marginVertical: 5 }}>
-            Hold down red pin to adjust location
-          </Text>
+          </View>
+
+          <Text style={styles.sectionHeader}>Class Times</Text>
+          <TimeBlockPicker blocks={classTimeBlocks} setBlocks={setClassTimeBlocks} label={""} />
+
+          {!isLoadingLocation && (
+            <>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: formData.latitude,
+                  longitude: formData.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+              >
+                <Marker
+                  draggable
+                  coordinate={{
+                    latitude: formData.latitude,
+                    longitude: formData.longitude,
+                  }}
+                  onDragEnd={(e) => {
+                    const { latitude, longitude } = e.nativeEvent.coordinate;
+
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude,
+                      longitude,
+                    }));
+
+                    updateAddressFromCoords(latitude, longitude);
+                  }}
+                />
+              </MapView>
+              <Text style={{ textAlign: "center", marginVertical: 5 }}>
+                Hold down red pin to adjust location
+              </Text>
+            </>
+          )}
+
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              Object.values(validationErrors).some(Boolean) && {
+                backgroundColor: "#aaa",
+              },
+            ]}
+            onPress={handleSubmit}
+            disabled={Object.values(validationErrors).some(Boolean)}
+          >
+            <Text style={styles.submitButtonText}>Submit</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.replace("/(tabs)/map")}
+          >
+            <Text style={styles.backButtonText}>Back</Text>
+          </TouchableOpacity>
         </>
       )}
-
-      <TouchableOpacity
-        style={[
-          styles.submitButton,
-          Object.values(validationErrors).some(Boolean) && {
-            backgroundColor: "#aaa",
-          },
-        ]}
-        onPress={handleSubmit}
-        disabled={Object.values(validationErrors).some(Boolean)}
-      >
-        <Text style={styles.submitButtonText}>Submit</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.replace("/(tabs)/map")}
-      >
-        <Text style={styles.backButtonText}>Back</Text>
-      </TouchableOpacity>
-    </>
-  )}
-/>
-
-)}
+    />
+  </>
+);
+}
 
 const styles = StyleSheet.create({
   container: { 
