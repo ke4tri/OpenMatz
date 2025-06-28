@@ -70,6 +70,7 @@ const UpdateGymScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
 const [formData, setFormData] = useState<{
+  membershipRequired: boolean;
   id: string;
   name: string;
   city: string;
@@ -107,6 +108,7 @@ const [formData, setFormData] = useState<{
   submittedByName: "",
   locationVerified: false,
   distanceFromGym: null,
+  membershipRequired: false,
 });
 
 
@@ -185,6 +187,7 @@ useEffect(() => {
         longitude: gym.longitude,
         pendingUpdate: true,
         updatedFromId: gym.id,
+        membershipRequired: gym.membershipRequired ?? false,
       }));
 
       // ✅ Parse open mat and class times if present
@@ -263,7 +266,6 @@ const parseTimeBlock = (entry: string): TimeBlock => {
       endTime = end;
       note = notePart?.replace(")", "").trim() || "";
 
-      console.log("✅ Parsed colon format:", { entry, day, startTime, endTime, note });
     } else if (hasDash) {
       // ✅ Fallback space format
       const match = entry.match(/^(\w+)\s+([0-9:APMapm]+)\s*-\s*([0-9:APMapm]+)/);
@@ -272,8 +274,6 @@ const parseTimeBlock = (entry: string): TimeBlock => {
         startTime = match[2].trim();
         endTime = match[3].trim();
         note = "";
-
-        console.log("✅ Parsed space format:", { entry, day, startTime, endTime });
       }
     } else {
       console.warn("❌ Unrecognized open mat time format:", entry);
@@ -393,7 +393,7 @@ const newGym: Gym = {
   },
   locationVerified: formData.locationVerified,
   distanceFromGym: formData.distanceFromGym,
-  membershipRequired: undefined,
+  membershipRequired: formData.membershipRequired ?? false,
 };
 
   
@@ -449,11 +449,24 @@ const newGym: Gym = {
         setBlocks={setOpenMatBlocks}
       />
 
+      <View style={{ marginVertical: 16, alignItems: "center" }}>
+        <Text style={{ fontSize: 16, marginBottom: 6, textAlign: "center" }}>
+          Membership Required for Drop Ins and Open Mat?
+        </Text>
+        <Switch
+          value={formData.membershipRequired}
+          onValueChange={(val) =>
+            setFormData((prev) => ({ ...prev, membershipRequired: val }))
+          }
+        />
+      </View>
+
       <TimeBlockPicker
         label="Class Times"
         blocks={classTimeBlocks}
         setBlocks={setClassTimeBlocks}
       />
+
      {formData.distanceFromGym !== null && (
   <Text style={{
     textAlign: "center",
