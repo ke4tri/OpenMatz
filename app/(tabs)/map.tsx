@@ -80,31 +80,48 @@ export default function MapScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        region={region}
-        showsUserLocation
-        onRegionChangeComplete={onRegionChangeComplete}
-      >
-        {markers}
-      </MapView>
+   <View style={styles.container}>
+  <MapView
+    style={styles.map}
+    region={region}
+    showsUserLocation
+    onRegionChangeComplete={onRegionChangeComplete}
+  >
+    {markers}
+  </MapView>
 
-      {/* Spinning Clock Logo */}
-      <View style={styles.logoRow}>
-        <Image source={require("../../assets/appLogo/Mat.png")} style={styles.textLogo} />
-        <AnimatedClock />
-        <Image source={require("../../assets/appLogo/Times2.png")} style={styles.textLogo} />
-      </View>
+  {/* Spinning Clock Logo */}
+  <View style={styles.logoRow}>
+    <Image source={require("../../assets/appLogo/Mat.png")} style={styles.textLogo} />
+    <AnimatedClock />
+    <Image source={require("../../assets/appLogo/Times2.png")} style={styles.textLogo} />
+  </View>
 
-      {/* Floating Submit button */}
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => router.push("/screens/submit")}
-      >
-        <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
-      </TouchableOpacity>
+  {/* 🔑 Color Legend */}
+  <View style={styles.legendContainer}>
+    <View style={styles.legendItem}>
+      <View style={[styles.colorDot, { backgroundColor: "blue" }]} />
+      <Text style={styles.legendText}>Approved Gym</Text>
     </View>
+    <View style={styles.legendItem}>
+      <View style={[styles.colorDot, { backgroundColor: "yellow" }]} />
+      <Text style={styles.legendText}>Restrictions/Call</Text>
+    </View>
+    <View style={styles.legendItem}>
+      <View style={[styles.colorDot, { backgroundColor: "red" }]} />
+      <Text style={styles.legendText}>Unverified</Text>
+    </View>
+  </View>
+
+  {/* Floating Submit button */}
+  <TouchableOpacity
+    style={styles.floatingButton}
+    onPress={() => router.push("/screens/submit")}
+  >
+    <Text style={styles.floatingButtonText}>+ Submit a Gym</Text>
+  </TouchableOpacity>
+</View>
+
   );
 }
 
@@ -115,6 +132,36 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  
+legendContainer: {
+  position: "absolute",
+  bottom: 80,
+  right: 20,
+  padding: 6,
+  borderRadius: 8,
+},
+legendItem: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 4,
+},
+
+colorDot: {
+  width: 10,
+  height: 10,
+  borderRadius: 5,
+  marginRight: 6,
+},
+
+legendText: {
+  fontSize: 13,
+  color: "#f2f2f2",
+  textShadowColor: "rgba(0, 0, 0, 0.6)",
+  textShadowOffset: { width: 0, height: 1 },
+  textShadowRadius: 1,
+},
+
+
   logoRow: {
     flexDirection: "row",
     alignItems: "center",
