@@ -1,0 +1,35 @@
+{
+  "cli": {
+    "version": ">= 6.3.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "production": {
+      "distribution": "internal",
+      "developmentClient": false,
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "ENVIRONMENT": "production"
+      }
+    },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "ENVIRONMENT": "development"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "ENVIRONMENT": "preview"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
