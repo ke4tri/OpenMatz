@@ -1,0 +1,38 @@
+{
+  "cli": {
+    "version": ">= 6.3.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "ENVIRONMENT": "development"
+      }
+    },
+    "testflight": {
+      "distribution": "store",
+      "developmentClient": false,
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false
+      },
+      "env": {
+        "ENVIRONMENT": "preview"
+      }
+    },
+    "production": {
+      "distribution": "internal",
+      "developmentClient": false,
+      "autoIncrement": true,
+      "ios": {
+        "simulator": false
+      }
+    }
+  },
+"submit": {
+  "production": {},
+  "testflight": {}
+}
+}
