@@ -347,7 +347,8 @@ const parseTimeBlock = (entry: string): TimeBlock => {
     }
   };
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
+  try {
     if (!formData.name || !formData.latitude || !formData.longitude) {
       Alert.alert("Missing required fields", "Name, latitude, and longitude are required.");
       return;
@@ -360,55 +361,53 @@ const parseTimeBlock = (entry: string): TimeBlock => {
       Alert.alert("Invalid Phone Number", "Please enter a valid phone number.");
       return;
     }
-  
-const openMatTimes = openMatBlocks
-  .filter(b => b.day && b.startTime && b.endTime)
-  .map(b =>
-    `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
-  );
 
-const classTimes = classTimeBlocks
-  .filter(b => b.day && b.startTime && b.endTime)
-  .map(b =>
-    `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
-  );
+    const openMatTimes = openMatBlocks
+      .filter(b => b.day && b.startTime && b.endTime)
+      .map(b =>
+        `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+      );
 
+    const classTimes = classTimeBlocks
+      .filter(b => b.day && b.startTime && b.endTime)
+      .map(b =>
+        `${b.day}: ${b.startTime} - ${b.endTime}${b.note ? ` (${b.note})` : ""}`
+      );
 
     const ip = await fetchIP();
 
-  
-const newGym: Gym = {
-  ...formData,
-  openMatTimes,
-  classTimes,
-  latitude: parseFloat(formData.latitude as any),
-  longitude: parseFloat(formData.longitude as any),
-  approved: false,
-  submittedAt: new Date().toISOString(),
-  submittedByIP: ip,
-  submittedBy: {
-    name: formData.submittedByName || "",
-    email: formData.email,
-    phone: formData.phone,
-  },
-  locationVerified: formData.locationVerified,
-  distanceFromGym: formData.distanceFromGym,
-  membershipRequired: formData.membershipRequired ?? false,
-};
+    const newGym: Gym = {
+      ...formData,
+      openMatTimes,
+      classTimes,
+      latitude: parseFloat(formData.latitude as any),
+      longitude: parseFloat(formData.longitude as any),
+      approved: false,
+      submittedAt: new Date().toISOString(),
+      submittedByIP: ip,
+      submittedBy: {
+        name: formData.submittedByName || "",
+        email: formData.email,
+        phone: formData.phone,
+      },
+      locationVerified: formData.locationVerified,
+      distanceFromGym: formData.distanceFromGym,
+      membershipRequired: formData.membershipRequired ?? false,
+    };
 
-  
-    try {
-      await setDoc(doc(db, "pendingGyms", newGym.id), {
-        ...newGym,
-        updatedAt: new Date().toISOString(),
-      });
-      Alert.alert("Submitted", "Your update has been submitted for review.");
-      router.replace("/(tabs)/map");
-    } catch (err) {
-      console.error("❌ Firestore update failed:", err);
-      Alert.alert("Error", "Failed to submit update.");
-    }
-  };
+    await setDoc(doc(db, "pendingGyms", newGym.id), {
+      ...newGym,
+      updatedAt: new Date().toISOString(),
+    });
+
+    Alert.alert("Submitted", "Your update has been submitted for review.");
+    router.replace("/(tabs)/map");
+
+  } catch (err) {
+    console.error("❌ Unexpected error in handleSubmit:", err);
+    Alert.alert("Unexpected Error", "Something went wrong. Please try again.");
+  }
+};
 
   const logoSource = formData.logo ? { uri: formData.logo } : fallbackLogo;
 
