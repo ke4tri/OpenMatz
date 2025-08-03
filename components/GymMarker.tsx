@@ -19,7 +19,7 @@ type Props = {
 
   const dotColor =
   gym.openMatTimes?.[0]?.includes("None Listed") ? "red" :
-  gym.membershipRequired ? "yellow" :
+  gym.membershipRequired ? "orange" :
   "blue";
 
 
@@ -29,19 +29,13 @@ type Props = {
   coordinate={{ latitude: gym.latitude, longitude: gym.longitude }}
   onPress={onPress} // shows callout
 >
-{/* <View
-  style={[
-    styles.dotMarker,
-    gym.openMatTimes.includes("None Listed") && { backgroundColor: "red" },
-  ]}
-/> */}
+
 <View style={[styles.dotMarker, { backgroundColor: dotColor }]} />
 
 
   <Callout
   tooltip
   onPress={() => {
-    // console.log("Tapped callout for:", gym.name);
     router.push({
       pathname: "/screens/gym-details",
       params: { gym: JSON.stringify(gym) },

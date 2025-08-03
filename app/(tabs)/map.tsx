@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { View, StyleSheet, Image, TouchableOpacity, Text, Dimensions } from "react-native";
+import { View, StyleSheet, Image, TouchableOpacity, Text, Dimensions, TouchableWithoutFeedback } from "react-native";
 import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
 import { useRouter } from "expo-router";
@@ -9,6 +9,21 @@ import { db } from "../../Firebase/firebaseConfig";
 import AnimatedClock from "../../components/AnimatedClock";
 
 const screenWidth = Dimensions.get("window").width;
+
+const LogoRow = () => {
+  const router = useRouter();
+
+  return (
+    <TouchableWithoutFeedback onPress={() => router.push("/screens/future-release")}>
+      <View style={styles.logoRow}>
+        <Text style={styles.logoText}>Mat</Text>
+        <AnimatedClock />
+        <Text style={styles.logoText}>Times</Text>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+};
+
 
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
 
@@ -133,12 +148,17 @@ useEffect(() => {
 )}
 
 
-        {/* Spinning Clock Logo */}
-<View style={styles.logoRow}>
-  <Text style={styles.logoText}>Mat</Text>
-  <AnimatedClock />
-  <Text style={styles.logoText}>Times</Text>
-</View>
+        {/* Spinning Clock Logo 
+<Pressable onPress={() => router.push("/screens/future-release")}>
+  <View style={styles.logoRow}>
+    <Text style={styles.logoText}>Mat</Text>
+    <AnimatedClock />
+    <Text style={styles.logoText}>Times</Text>
+  </View>
+</Pressable>
+*/}
+
+<LogoRow />
 
         {/* Color Legend */}
         <View style={styles.legendContainer}>
@@ -147,7 +167,7 @@ useEffect(() => {
             <Text style={styles.legendText}>Approved Gym</Text>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.colorDot, { backgroundColor: "yellow" }]} />
+            <View style={[styles.colorDot, { backgroundColor: "orange" }]} />
             <Text style={styles.legendText}>Restrictions/Call</Text>
           </View>
           <View style={styles.legendItem}>
