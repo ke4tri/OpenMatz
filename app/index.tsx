@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Image, StyleSheet } from "react-native";
+import { View, Image, StyleSheet, Text, Linking, Pressable } from "react-native";
 import AnimatedClock from "../components/AnimatedClock";
 import { useRouter } from "expo-router";
 import { useLocation } from "../components/LocationContext";
@@ -7,7 +7,8 @@ import * as Location from "expo-location";
 
 const SplashScreen = () => {
   const router = useRouter();
-const { setLocation } = useLocation();
+  const { setLocation } = useLocation();
+
   useEffect(() => {
     const fetchLocation = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -46,6 +47,14 @@ const { setLocation } = useLocation();
         <AnimatedClock />
         <Image source={require("../assets/appLogo/Times2.png")} style={styles.textLogo} />
       </View>
+
+      {/* ➕ Added Branding */}
+      <View style={styles.branding}>
+        <Text style={styles.byText}>By Port13ET</Text>
+        <Pressable onPress={() => Linking.openURL("https://www.Port13ET.com")}>
+          <Text style={styles.url}>www.Port13ET.com</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
@@ -66,6 +75,21 @@ const styles = StyleSheet.create({
     height: 60,
     resizeMode: "contain",
     marginHorizontal: 8,
+  },
+  branding: {
+    marginTop: 30,
+    alignItems: "center",
+  },
+  byText: {
+    color: "#ccc",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  url: {
+    color: "#00BFFF",
+    fontSize: 14,
+    textDecorationLine: "underline",
+    marginTop: 4,
   },
 });
 

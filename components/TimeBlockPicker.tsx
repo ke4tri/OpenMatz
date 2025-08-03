@@ -8,7 +8,6 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomTimePicker from "./CustomTimePicker";
 
 
