@@ -4,7 +4,7 @@ import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
 import { useRouter } from "expo-router";
 import { useLocation } from "../../components/LocationContext";
-import { collection, getDocs } from "firebase/firestore";
+import {  query, where, getDocs, collection } from "firebase/firestore";
 import { db } from "../../Firebase/firebaseConfig";
 import AnimatedClock from "../../components/AnimatedClock";
 
@@ -23,6 +23,8 @@ const LogoRow = () => {
     </TouchableWithoutFeedback>
   );
 };
+
+
 
 
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
