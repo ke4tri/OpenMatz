@@ -41,7 +41,7 @@ type Props = {
   <Callout
   tooltip
   onPress={() => {
-    console.log("Tapped callout for:", gym.name);
+    // console.log("Tapped callout for:", gym.name);
     router.push({
       pathname: "/screens/gym-details",
       params: { gym: JSON.stringify(gym) },

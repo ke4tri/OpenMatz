@@ -15,7 +15,7 @@ import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { Gym } from "../types";
 import TimeBlockPicker, { TimeBlock } from "../components/TimeBlockPicker";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, addDoc, collection } from "firebase/firestore";
 import { db } from "../Firebase/firebaseConfig";
 import * as Location from "expo-location";
 import { currentTier } from "../constants/tiers";
@@ -115,6 +115,9 @@ const [formData, setFormData] = useState<{
   const [openMatBlocks, setOpenMatBlocks] = useState<TimeBlock[]>([]);
   const [classTimeBlocks, setClassTimeBlocks] = useState<TimeBlock[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+const [deleteReason, setDeleteReason] = useState("");
+const [showDeleteReason, setShowDeleteReason] = useState(false);
+
 
   const fetchFromOpenCage = async (latitude: number, longitude: number) => {
     try {
@@ -140,6 +143,39 @@ const [formData, setFormData] = useState<{
       return null;
     }
   };
+
+const handleSuggestDelete = async () => {
+  try {
+    const ip = await fetch("https://api.ipify.org?format=json")
+      .then(res => res.json())
+      .then(data => data.ip)
+      .catch(() => "unknown");
+
+const deleteRequest = {
+  isDeleteRequest: true,
+  gymId: formData.id,
+  name: formData.name,
+  address: formData.address,
+  submittedAt: new Date().toISOString(),
+  submittedByIP: ip,
+  submittedBy: {
+    name: formData.submittedByName || "",
+    email: formData.email || "",
+    phone: formData.phone || "",
+  },
+  reason: deleteReason.trim(), // ✅ Here’s where you inject it
+};
+
+
+    await addDoc(collection(db, "deleteRequests"), deleteRequest);
+
+    Alert.alert("Submitted", "Delete request has been sent.");
+    router.replace("/(tabs)/map");
+  } catch (err) {
+    console.error("❌ Delete request failed:", err);
+    Alert.alert("Error", "Could not submit delete request.");
+  }
+};
   
   const updateAddressFromCoords = async (latitude: number, longitude: number) => {
     try {
@@ -324,17 +360,17 @@ const parseTimeBlock = (entry: string): TimeBlock => {
     }
   };
 
-  const saveToPendingJson = async (newGym: Gym) => {
-    try {
-      const existingData = await FileSystem.readAsStringAsync(pendingGymsPath).catch(() => "[]");
-      const parsed = JSON.parse(existingData);
-      parsed.push(newGym);
-      await FileSystem.writeAsStringAsync(pendingGymsPath, JSON.stringify(parsed, null, 2));
-    } catch (e) {
-      console.error("Failed to save to pending gyms:", e);
-      Alert.alert("Error", "Failed to save the submission.");
-    }
-  };
+  // const saveToPendingJson = async (newGym: Gym) => {
+  //   try {
+  //     const existingData = await FileSystem.readAsStringAsync(pendingGymsPath).catch(() => "[]");
+  //     const parsed = JSON.parse(existingData);
+  //     parsed.push(newGym);
+  //     await FileSystem.writeAsStringAsync(pendingGymsPath, JSON.stringify(parsed, null, 2));
+  //   } catch (e) {
+  //     console.error("Failed to save to pending gyms:", e);
+  //     Alert.alert("Error", "Failed to save the submission.");
+  //   }
+  // };
 
   const fetchIP = async (): Promise<string> => {
     try {
@@ -395,10 +431,30 @@ const handleSubmit = async () => {
       membershipRequired: formData.membershipRequired ?? false,
     };
 
-    await setDoc(doc(db, "pendingGyms", newGym.id), {
-      ...newGym,
-      updatedAt: new Date().toISOString(),
-    });
+    console.log("🟡 Attempting to write to Firestore...");
+console.log("🧪 newGym.id:", newGym.id);
+console.log("📦 Data:", {
+  ...newGym,
+  updatedAt: new Date().toISOString()
+});
+
+try {
+  await setDoc(doc(db, "pendingGyms", newGym.id), {
+    ...newGym,
+    updatedAt: new Date().toISOString(),
+  });
+  console.log("✅ Firestore write successful.");
+} catch (err) {
+  console.error("❌ Firestore write failed:", err);
+  Alert.alert("Error", "Could not save to Firestore.");
+  return;
+}
+
+
+    // await setDoc(doc(db, "pendingGyms", newGym.id), {
+    //   ...newGym,
+    //   updatedAt: new Date().toISOString(),
+    // });
 
     Alert.alert("Submitted", "Your update has been submitted for review.");
     router.replace("/(tabs)/map");
@@ -422,7 +478,7 @@ const handleSubmit = async () => {
       <View style={styles.logoWrapper}>
         <Image source={logoSource} style={styles.logo} resizeMode="contain" />
         {!formData.logo && (
-          <Text style={styles.logoText}>No logo submitted</Text>
+          <Text style={styles.logoText}>Logo Upload Coming Soon!</Text>
         )}
       </View>
 
@@ -509,6 +565,36 @@ const handleSubmit = async () => {
         Hold down red pin to adjust location
       </Text>
 
+
+<TouchableOpacity
+  style={[styles.submitButton, { backgroundColor: "tomato" }]}
+  onPress={() => setShowDeleteReason(true)}
+>
+  <Text style={styles.submitButtonText}>Suggest Delete</Text>
+</TouchableOpacity>
+
+{showDeleteReason && (
+  <View style={{ marginTop: 16 }}>
+    <Text style={styles.sectionHeader}>Why should this gym be deleted?</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Enter reason..."
+      value={deleteReason}
+      onChangeText={setDeleteReason}
+      multiline
+    />
+    <TouchableOpacity
+      style={[styles.submitButton, { backgroundColor: "red" }]}
+      onPress={handleSuggestDelete}
+    >
+      <Text style={styles.submitButtonText}>Delete</Text>
+    </TouchableOpacity>
+  </View>
+)}
+
+
+
+
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
         <Text style={styles.submitButtonText}>SUBMIT</Text>
       </TouchableOpacity>
@@ -559,6 +645,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: "center",
     marginVertical: 12,
+    width: 120
   },
   submitButtonText: {
     color: "white",
@@ -573,7 +660,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignSelf: "center",
     marginVertical: 12,
-    width: 100
+    width: 120
   },
   backButtonText: {
     color: 'white',
@@ -581,6 +668,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
+  sectionHeader: {
+  fontSize: 18,
+  fontWeight: "bold",
+  marginTop: 20,
+  marginBottom: 10,
+  color: "#333",
+},
+
   map: {
     height: 200,
     width: "100%",

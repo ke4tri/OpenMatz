@@ -12,6 +12,8 @@ const firebaseConfig = {
   appId: Constants.expoConfig?.extra?.firebaseAppId,
 };
 
+console.log("🔥 Firebase config:", firebaseConfig);
+
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
