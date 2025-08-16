@@ -24,6 +24,7 @@ import axios from "axios";
 import Constants from "expo-constants";
 
 
+
 //Proximity to Gym
 function getDistanceInMeters(
   lat1: number,
@@ -66,9 +67,14 @@ const validateEmail = (email: string) =>
   !shadyEmailDomains.some((d) => email.toLowerCase().includes(d));
 const validatePhone = (phone: string) =>
   /^\+?[0-9\s\-().]{7,}$/.test(phone.replace(/\D/g, ""));
+
+
 const UpdateGymScreen = () => {
   const router = useRouter();
+
+
   const params = useLocalSearchParams();
+
 const [formData, setFormData] = useState<{
   membershipRequired: boolean;
   id: string;

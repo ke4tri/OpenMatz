@@ -1,9 +1,12 @@
+// app/index.tsx
 import React, { useEffect } from "react";
-import { View, Image, StyleSheet, Text, Linking, Pressable } from "react-native";
+import { View, Image, StyleSheet, Text, Linking, Pressable, Dimensions } from "react-native";
 import AnimatedClock from "../components/AnimatedClock";
-import { useRouter } from "expo-router";
+import { useRouter, Stack } from "expo-router"; // 👈 add Stack
 import { useLocation } from "../components/LocationContext";
 import * as Location from "expo-location";
+
+const screenWidth = Dimensions.get("window").width;
 
 const SplashScreen = () => {
   const router = useRouter();
@@ -42,13 +45,16 @@ const SplashScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* Hide the default header for this route */}
+      <Stack.Screen options={{ headerShown: false }} />
+
       <View style={styles.logoRow}>
-        <Image source={require("../assets/appLogo/Mat.png")} style={styles.textLogo} />
+       <Image source={require("../assets/appLogo/MATTIME_ForWBackG.png")} style={styles.textLogo} />
+        {/* <Image source={require("../assets/appLogo/Mat.png")} style={styles.textLogo} />
         <AnimatedClock />
-        <Image source={require("../assets/appLogo/Times2.png")} style={styles.textLogo} />
+        <Image source={require("../assets/appLogo/Times2.png")} style={styles.textLogo} /> */}
       </View>
 
-      {/* ➕ Added Branding */}
       <View style={styles.branding}>
         <Text style={styles.byText}>By Port13ET</Text>
         <Pressable onPress={() => Linking.openURL("https://www.Port13ET.com")}>
@@ -60,37 +66,16 @@ const SplashScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  logoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  textLogo: {
-    width: 120,
-    height: 60,
-    resizeMode: "contain",
-    marginHorizontal: 8,
-  },
-  branding: {
-    marginTop: 30,
-    alignItems: "center",
-  },
-  byText: {
-    color: "#ccc",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  url: {
-    color: "#00BFFF",
-    fontSize: 14,
-    textDecorationLine: "underline",
-    marginTop: 4,
-  },
+  container: { flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
+  logoRow: { flexDirection: "row", alignItems: "center" },
+  textLogo: {   width: screenWidth * 0.8, // 80% of screen width
+  aspectRatio: 1,           // 1:1 (same as 120x120)
+  resizeMode: "contain",
+  marginHorizontal: 8,
+ },
+  branding: { marginTop: 30, alignItems: "center" },
+  byText: { color: "#ccc", fontSize: 16, fontWeight: "600" },
+  url: { color: "#00BFFF", fontSize: 14, textDecorationLine: "underline", marginTop: 4 },
 });
 
 export default SplashScreen;

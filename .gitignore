@@ -3,22 +3,26 @@
 # dependencies
 node_modules/
 
-# Expo
+# Expo / Metro
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+.metro-health-check*
 
-# Native
+# Native (ignore if not editing native code)
+ios/
+android/
 *.orig.*
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
+GoogleService-Info.plist
+google-services.json
 
-# Metro
-.metro-health-check*
+
 
 # debug
 npm-debug.*
@@ -31,10 +35,13 @@ yarn-error.*
 *.psd
 
 # local env files
-.env*.local
 #eas.json
 #app.json
 #app.json.bak
+
+# Env
+.env
+.env*.local
 
 
 
@@ -42,8 +49,6 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
-.env
-assets/gyms.json
 assets/gyms.json
 assets/gyms_nozip.json
 scripts/uploadGyms.ts

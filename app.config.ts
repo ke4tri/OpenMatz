@@ -29,6 +29,7 @@ export default {
     },
     extra: {
       opencageApiKey: process.env.OPENCAGE_API_KEY,
+      REVENUECAT_PUBLIC_KEY: process.env.REVENUECAT_PUBLIC_KEY,
       firebaseApiKey: process.env.FIREBASE_API_KEY,
       firebaseAuthDomain: process.env.FIREBASE_AUTH_DOMAIN,
       firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
