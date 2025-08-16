@@ -1,21 +1,37 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "Node16",              // ✅ this is the fix
-    "moduleResolution": "Node16",    // ✅ matches
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
     "strict": true,
-    "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+    "noEmit": true,
+    "skipLibCheck": true
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-, "scripts/uploadGyms.mts"  ]
+  "include": ["**/*.ts", "**/*.tsx"]
 }
+
+// {
+//   "extends": "expo/tsconfig.base",
+//   "compilerOptions": {
+//     "target": "ES2020",
+//     "module": "Node16",              // ✅ this is the fix
+//     "moduleResolution": "Node16",    // ✅ matches
+//     "resolveJsonModule": true,
+//     "esModuleInterop": true,
+//     "strict": true,
+//     "paths": {
+//       "@/*": [
+//         "./*"
+//       ]
+//     }
+//   },
+//   "include": [
+//     "**/*.ts",
+//     "**/*.tsx"
+// , "scripts/uploadGyms.mts"  ]
+// }
+
+
 

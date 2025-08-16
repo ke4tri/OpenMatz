@@ -1,39 +1,42 @@
 import { View, Text, StyleSheet, Pressable, Linking } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, Stack } from "expo-router";
 
 export default function FutureRelease() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>By Port13ET</Text>
-      <Pressable onPress={() => Linking.openURL("https://www.Port13ET.com")}>
-        <Text style={styles.link}>www.Port13ET.com</Text>
-      </Pressable>
+        <>
+      {/* Hide the native header just for this screen */}
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.divider} />
+      <View style={styles.container}>
+        <Text style={styles.title}>By Port13ET</Text>
+        <Pressable onPress={() => Linking.openURL("https://www.Port13ET.com")}>
+          <Text style={styles.link}>www.Port13ET.com</Text>
+        </Pressable>
 
-<Text style={styles.heading}>Coming Soon</Text>
-<Text style={styles.feature}>• Gym Logo Upload •</Text>
-<Text style={styles.feature}>• Premium membership options •</Text>
-<Text style={styles.feature}>• More Locations •</Text>
-<View style={{ paddingLeft: 20 }}>
-  <Text style={styles.subFeature}>• Chicago</Text>
-  <Text style={styles.subFeature}>• Cancun</Text>
-  <Text style={styles.subFeature}>• Barcelona</Text>
-  <Text style={styles.subFeature}>• Amsterdam</Text>
-</View>
+        <View style={styles.divider} />
 
-<Text style={styles.disclaimer}>
-  We are working diligently on the process of gym population. It is our goal to populate the app with as many seeded gyms as possible with updated and accurate information. Please reach out with any inaccurate information you may find.
-</Text>
+        <Text style={styles.heading}>Coming Soon</Text>
+        <Text style={styles.feature}>• Gym Logo Upload •</Text>
+        <Text style={styles.feature}>• Premium membership options •</Text>
+        <Text style={styles.feature}>• More Locations •</Text>
+        <View style={{ paddingLeft: 20 }}>
+          <Text style={styles.subFeature}>• Chicago</Text>
+          <Text style={styles.subFeature}>• Cancun</Text>
+          <Text style={styles.subFeature}>• Barcelona</Text>
+          <Text style={styles.subFeature}>• Amsterdam</Text>
+        </View>
 
+        <Text style={styles.disclaimer}>
+          We are working diligently on the process of gym population. It is our goal to populate the app with as many seeded gyms as possible with updated and accurate information. Please reach out with any inaccurate information you may find.
+        </Text>
 
-
-      <Pressable onPress={() => router.back()} style={styles.backButton}>
-        <Text style={{ color: "white" }}>Back to map</Text>
-      </Pressable>
-    </View>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Text style={{ color: "white" }}>Back to map</Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 

@@ -1,12 +1,30 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { View, StyleSheet, Image, TouchableOpacity, Text, Dimensions, TouchableWithoutFeedback } from "react-native";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import {
+  View,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Text,
+  Dimensions,
+  TouchableWithoutFeedback,
+  Platform,
+} from "react-native";
 import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
 import { useRouter } from "expo-router";
 import { useLocation } from "../../components/LocationContext";
-import {  query, where, getDocs, collection } from "firebase/firestore";
+//import {  query, where, getDocs, collection } from "firebase/firestore";
 import { db } from "../../Firebase/firebaseConfig";
 import AnimatedClock from "../../components/AnimatedClock";
+import localGyms from "../../assets/gyms.json"; // fallback — adjust path
+
+import { getDocs, collection } from "firebase/firestore/lite";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -14,18 +32,18 @@ const LogoRow = () => {
   const router = useRouter();
 
   return (
-    <TouchableWithoutFeedback onPress={() => router.push("/screens/future-release")}>
+    <TouchableWithoutFeedback
+      onPress={() => router.push("/screens/future-release")}
+    >
       <View style={styles.logoRow}>
-        <Text style={styles.logoText}>Mat</Text>
+         <Image source={require("../../assets/appLogo/MATTIME_ForBBackG.png")} style={styles.Logo} />
+        {/* <Text style={styles.logoText}>Mat</Text>
         <AnimatedClock />
-        <Text style={styles.logoText}>Times</Text>
+        <Text style={styles.logoText}>Times</Text> */}
       </View>
     </TouchableWithoutFeedback>
   );
 };
-
-
-
 
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
 
@@ -40,6 +58,7 @@ export default function MapScreen() {
       longitudeDelta: 0.1,
     });
 
+    const [didCenter, setDidCenter] = useState(false);
     const [gyms, setGyms] = useState<any[]>([]);
     const markerRefs = useRef<{ [id: string]: MarkerRef | null }>({});
     const router = useRouter();
@@ -51,57 +70,82 @@ export default function MapScreen() {
     }, []);
 
     const mapRef = useRef<MapView | null>(null);
- const [mapKey, setMapKey] = useState(0);
-const [initialLoaded, setInitialLoaded] = useState(false);
+    const [mapKey, setMapKey] = useState(0);
+    const [initialLoaded, setInitialLoaded] = useState(false);
+
+      useEffect(() => {
+        let cancelled = false;
+
+        const fetchGyms = async () => {
+          try {
+            const snap = await getDocs(collection(db, "gyms"));
+            const approved = snap.docs
+              .map(d => ({ id: d.id, ...(d.data() as any) }))
+              .filter((g: any) => g?.approved);
+
+            if (!cancelled) setGyms(approved);   // ✅ only once, inside guard
+          } catch (error) {
+            console.warn("❌ Firestore failed, falling back to bundled gyms:", error);
+            if (!cancelled) {
+              const approvedLocal = (localGyms as any[])
+                .map((g, i) => ({ id: g.id ?? `local-${i}`, ...g }))
+                .filter((g: any) => g?.approved);
+              setGyms(approvedLocal);
+            }
+          } finally {
+            if (!cancelled) {
+              setRegion(prev => {
+                const nudged = { ...prev, latitude: prev.latitude + 0.0005 };
+
+                // animate to nudged, then back to original center
+                requestAnimationFrame(() => {
+                  mapRef.current?.animateToRegion(nudged, 120);
+                  mapRef.current?.animateToRegion(prev, 120);
+                });
+
+                return nudged; // state updates; the second animate brings the camera back
+              });
+            }
+          }
+        };
+
+        fetchGyms();
+        return () => { cancelled = true; };
+      }, []);
 
 
-    // Fetch gyms
-useEffect(() => {
- 
 
-  const fetchGyms = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "gyms"));
-      const approvedGyms = snapshot.docs
-        .map((doc) => doc.data())
-        .filter((gym: any) => gym.approved);
+      useEffect(() => {
+        if (!location || didCenter) return;
 
-      setGyms(approvedGyms);
-      setGyms(approvedGyms);
-setMapKey((prev) => prev + 1); // ⬅️ triggers MapView remount
+        const next: Region = {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        };
 
+        setRegion(next);
+        requestAnimationFrame(() => mapRef.current?.animateToRegion(next, 600));
+        setDidCenter(true);
+      }, [location, didCenter]);
 
-      // ✅ Force a visual update
-      setRegion((prev) => ({
-        ...prev,
-        latitude: prev.latitude + 0.00001,
-      }));
-    } catch (error) {
-      console.error("❌ Failed to fetch gyms:", error);
-    }
-  };
+      const handleUserLocationChange = useCallback((e: any) => {
+        if (didCenter) return;
+        const { coordinate } = e.nativeEvent || {};
+        const { latitude, longitude } = coordinate || {};
+        if (typeof latitude !== "number" || typeof longitude !== "number") return;
 
-  fetchGyms();
-}, []);
-
-
-
-
-    // Center map when location ready
-useEffect(() => {
-  if (location && !initialLoaded) {
-    const nudgeRegion = {
-      latitude: location.latitude + 0.00001,
-      longitude: location.longitude,
-      latitudeDelta: 0.1,
-      longitudeDelta: 0.1,
-    };
-
-    setRegion(nudgeRegion);
-    setMapKey((prev) => prev + 1); // Force MapView re-render
-    setInitialLoaded(true);
-  }
-}, [location, initialLoaded]);
+        const next: Region = {
+          latitude,
+          longitude,
+          latitudeDelta: 0.08,
+          longitudeDelta: 0.08,
+        };
+        setRegion(next);
+        mapRef.current?.animateToRegion(next, 600);
+        setDidCenter(true);
+      }, [didCenter]);
 
 
     const markers = useMemo(
@@ -112,7 +156,9 @@ useEffect(() => {
               markerRefs.current[gym.id] = ref;
             };
             const handlePress = () => {
-              Object.values(markerRefs.current).forEach((r) => r?.hideCallout());
+              Object.values(markerRefs.current).forEach((r) =>
+                r?.hideCallout()
+              );
               markerRefs.current[gym.id]?.showCallout();
             };
 
@@ -136,31 +182,21 @@ useEffect(() => {
 
     return (
       <View style={styles.container}>
-{initialLoaded && (
-  <MapView
-    key={mapKey}
-    ref={mapRef}
-    style={styles.map}
-    initialRegion={region}
-    showsUserLocation
-    onRegionChangeComplete={onRegionChangeComplete}
-  >
-    {markers}
-  </MapView>
-)}
+        <MapView
+          key={mapKey}                // 👈 add this back
+          ref={mapRef}
+          style={styles.map}
+          region={region}
+          onRegionChangeComplete={onRegionChangeComplete}
+          showsUserLocation
+            onUserLocationChange={handleUserLocationChange}
+        >
+          {markers}
+        </MapView>
 
 
-        {/* Spinning Clock Logo 
-<Pressable onPress={() => router.push("/screens/future-release")}>
-  <View style={styles.logoRow}>
-    <Text style={styles.logoText}>Mat</Text>
-    <AnimatedClock />
-    <Text style={styles.logoText}>Times</Text>
-  </View>
-</Pressable>
-*/}
 
-<LogoRow />
+        <LogoRow />
 
         {/* Color Legend */}
         <View style={styles.legendContainer}>
@@ -211,12 +247,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   logoText: {
-  fontSize: screenWidth * 0.1, // increased from 0.08 to 0.1
-  fontWeight: "bold",
-  color: "#000",
-  marginHorizontal: 4, // tighter spacing around clock
-  fontFamily: "helvetica", // or custom font
-},
+    fontSize: screenWidth * 0.1, // increased from 0.08 to 0.1
+    fontWeight: "bold",
+    color: "#000",
+    marginHorizontal: 4, // tighter spacing around clock
+    fontFamily: "helvetica", // or custom font
+  },
 
   legendItem: {
     flexDirection: "row",
@@ -237,15 +273,15 @@ const styles = StyleSheet.create({
     textShadowRadius: 1,
   },
   logoRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  position: "absolute",
-  top: screenWidth * 0.20,
-  left: 0,
-  right: 0,
-  zIndex: 999,
-  paddingHorizontal: 10, // less horizontal space
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "absolute",
+    top: screenWidth * 0.2,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    paddingHorizontal: 10, // less horizontal space
   },
   textLogo: {
     width: screenWidth * 0.25,
@@ -268,4 +304,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  Logo: {     width: screenWidth * 0.6,
+  aspectRatio: 1.5,
+  resizeMode: "contain",
+  marginHorizontal: 8,
+  transform: [{ translateY: -35 }], // 👈 nudge up
+ },
 });

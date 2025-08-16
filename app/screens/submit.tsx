@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useRouter } from "expo-router";
+import { useRouter, Stack } from "expo-router";
 import * as Location from "expo-location";
 import { doc, setDoc } from "firebase/firestore";
 import Constants from "expo-constants";
@@ -21,9 +21,35 @@ import { db } from "../../Firebase/firebaseConfig";
 import type { Gym } from "../../types";
 import TimeBlockPicker, { TimeBlock } from "../../components/TimeBlockPicker";
 import axios from "axios";
+import { usePremiumStatus } from "../../hooks/usePremiumStatus";
+
 
 const SubmitScreen = () => {
   const router = useRouter();
+
+  //Below is logic for RevenueCat Paywalls
+  //  const { isPremium, loading } = usePremiumStatus();
+
+  //   if (loading) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+  //       <Text>Checking subscription status...</Text>
+  //     </View>
+  //   );
+  // }
+
+  // if (!isPremium) {
+  //   return (
+  //     <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
+  //       <Text style={{ textAlign: "center", marginBottom: 16 }}>
+  //         You need a Premium subscription to submit a gym.
+  //       </Text>
+  //       <TouchableOpacity onPress={() => router.push("/screens/subscribe")}>
+  //         <Text style={{ color: "#007AFF" }}>Go Premium</Text>
+  //       </TouchableOpacity>
+  //     </View>
+  //   );
+  // }
 
   const [formData, setFormData] = useState({
     id: "",
@@ -136,6 +162,17 @@ const SubmitScreen = () => {
   };
 
   return (
+        <>
+      {/* Header config for THIS screen */}
+      <Stack.Screen
+        options={{
+          title: "Submit a Gym",
+          headerLeft: () => null,            // ← removes chevron + breadcrumb text
+          headerLargeTitle: false,
+          headerTitleAlign: "center",
+          // headerBackButtonDisplayMode: "minimal", // optional: hides back title if you ever bring it back
+        }}
+      />
     <KeyboardAwareScrollView contentContainerStyle={styles.container}>
       <StatusBar barStyle="dark-content" />
       <Text style={styles.title}>Submit a Gym</Text>
@@ -218,6 +255,7 @@ const SubmitScreen = () => {
         <Text style={styles.backButtonText}>Back</Text>
       </TouchableOpacity>
     </KeyboardAwareScrollView>
+      </>
   );
 };
 

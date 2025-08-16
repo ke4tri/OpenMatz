@@ -1,11 +1,14 @@
 import { View, Text, Image, StyleSheet, Linking, ScrollView, TouchableOpacity} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePremiumStatus } from "../../hooks/usePremiumStatus";
 
 
 
 export default function GymDetailsScreen() {
   const { gym } = useLocalSearchParams();
+
+  
 
   if (!gym) {
     return (
@@ -25,6 +28,9 @@ export default function GymDetailsScreen() {
       </View>
     );
   }
+const isPremium = usePremiumStatus();
+console.log("🧪 isPremium:", isPremium);
+
 
   const { name, logo, phone, email } = parsed;
   const router = useRouter();
@@ -36,6 +42,8 @@ export default function GymDetailsScreen() {
   
 
   return (
+
+    
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
          {/* Back Button */}
@@ -119,6 +127,7 @@ export default function GymDetailsScreen() {
 </View>
 
   {/* Update Button */}
+{isPremium ? (
   <TouchableOpacity
     style={styles.button}
     onPress={() =>
@@ -130,6 +139,16 @@ export default function GymDetailsScreen() {
   >
     <Text style={styles.buttonText}>Update This Gym</Text>
   </TouchableOpacity>
+) : (
+  <TouchableOpacity
+    style={[styles.button, { backgroundColor: "#ccc" }]}
+    onPress={() => router.push("/go-premium")}
+  >
+    <Text style={styles.buttonText}>Go Premium to Edit</Text>
+  </TouchableOpacity>
+)}
+
+
       </ScrollView>
     </SafeAreaView>
   );
