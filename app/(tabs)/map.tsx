@@ -19,9 +19,8 @@ import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
 import { useRouter } from "expo-router";
 import { useLocation } from "../../components/LocationContext";
-//import {  query, where, getDocs, collection } from "firebase/firestore";
 import { db } from "../../Firebase/firebaseConfig";
-import AnimatedClock from "../../components/AnimatedClock";
+//import AnimatedClock from "../../components/AnimatedClock";
 import localGyms from "../../assets/gyms.json"; // fallback — adjust path
 
 import { getDocs, collection } from "firebase/firestore/lite";
