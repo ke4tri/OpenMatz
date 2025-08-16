@@ -15,7 +15,7 @@ import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { Gym } from "../types";
 import TimeBlockPicker, { TimeBlock } from "../components/TimeBlockPicker";
-import { doc, setDoc, addDoc, collection } from "firebase/firestore";
+import { doc, setDoc, addDoc, collection } from "firebase/firestore/lite";
 import { db } from "../Firebase/firebaseConfig";
 import * as Location from "expo-location";
 import { currentTier } from "../constants/tiers";

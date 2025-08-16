@@ -15,9 +15,9 @@ import MapView, { Marker } from "react-native-maps";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useRouter, Stack } from "expo-router";
 import * as Location from "expo-location";
-import { doc, setDoc } from "firebase/firestore";
-import Constants from "expo-constants";
+import { doc, setDoc, collection } from "firebase/firestore/lite";
 import { db } from "../../Firebase/firebaseConfig";
+import Constants from "expo-constants";
 import type { Gym } from "../../types";
 import TimeBlockPicker, { TimeBlock } from "../../components/TimeBlockPicker";
 import axios from "axios";
@@ -134,32 +134,42 @@ const SubmitScreen = () => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async () => {
+const handleSubmit = async () => {
+  console.log("▶️ Submit pressed (timestamp id)");
+
+  try {
+    //Keyboard.dismiss();
+
+    // ⏱️ your old style: 13-digit ms timestamp
     const id = Date.now().toString();
+
     const newGym: Gym = {
       ...formData,
       id,
-      openMatTimes: openMatBlocks.map((b) => `${b.day}: ${b.startTime} - ${b.endTime}`),
-      classTimes: classTimeBlocks.map((b) => `${b.day}: ${b.startTime} - ${b.endTime}`),
-      submittedAt: new Date().toISOString(),
+      openMatTimes: openMatBlocks.map(b => `${b.day}: ${b.startTime} - ${b.endTime}`),
+      classTimes:   classTimeBlocks.map(b => `${b.day}: ${b.startTime} - ${b.endTime}`),
+      submittedAt:  new Date().toISOString(),
       submittedByIP: "local-dev",
       submittedBy: {
-        name: formData.submittedByName,
-        email: formData.email,
-        phone: formData.phone,
+        name:  formData.submittedByName || "",
+        email: formData.email || "",
+        phone: formData.phone || "",
       },
       approved: false,
     };
 
-    try {
-      await setDoc(doc(db, "pendingGyms", id), newGym);
-      Alert.alert("Success", "Gym submitted for review.");
-      router.replace("/(tabs)/map");
-    } catch (err) {
-      console.error("❌ Firestore write failed:", err);
-      Alert.alert("Error", "Could not submit gym.");
-    }
-  };
+    // write to pendingGyms/{id}
+    await setDoc(doc(db, "pendingGyms", id), newGym);
+
+    console.log("✅ Write complete:", id);
+    Alert.alert("Success", "Gym submitted for review.");
+    router.replace("/(tabs)/map");
+  } catch (err: any) {
+    console.error("❌ Firestore write failed:", err?.code || err?.message || String(err));
+    Alert.alert("Error", `Could not submit gym.\n${err?.message || err}`);
+  }
+};
+
 
   return (
         <>
