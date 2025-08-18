@@ -38,7 +38,16 @@ export default {
       firebaseAppId: process.env.FIREBASE_APP_ID,
       eas: {
         projectId: "d3c311b2-1e00-4c9c-9e25-bf98c379e1b1"
-      }
+      },
+    revenuecat: {
+      iosKey: process.env.EXPO_PUBLIC_RC_IOS_KEY,
+      androidKey: process.env.EXPO_PUBLIC_RC_ANDROID_KEY,
+      entitlementStandard: process.env.EXPO_PUBLIC_RC_ENTITLEMENT_STANDARD || "standard_access",
+      entitlementPremium: process.env.EXPO_PUBLIC_RC_ENTITLEMENT_PREMIUM || "premium_access",
+      offeringDefault: process.env.EXPO_PUBLIC_RC_OFFERING_DEFAULT || "default",           // onboarding: show Standard + Premium
+      offeringUpgrade: process.env.EXPO_PUBLIC_RC_OFFERING_UPGRADE || "premium_upgrade",   // upgrade screen: Premium only
+    }
+
     }
   }
 };

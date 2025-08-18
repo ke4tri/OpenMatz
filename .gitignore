@@ -35,9 +35,9 @@ yarn-error.*
 *.psd
 
 # local env files
-#eas.json
-#app.json
-#app.json.bak
+eas.json
+app.json
+app.json.bak
 
 # Env
 .env

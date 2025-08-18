@@ -1,26 +1,16 @@
 // hooks/usePremiumStatus.ts
-import { useEffect, useState } from "react";
-import Purchases from "react-native-purchases";
+import { useAccess } from "./useAccess";
 
+// Keep submit.tsx unchanged: it still uses usePremiumStatus,
+// but under the hood this listens to RevenueCat updates
+// and flips isPremium immediately after a purchase/restore.
 export function usePremiumStatus() {
-  const [isPremium, setIsPremium] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkEntitlements = async () => {
-      try {
-        const customerInfo = await Purchases.getCustomerInfo();
-        const active = customerInfo.entitlements.active;
-        setIsPremium(!!active["premium"]);
-      } catch (e) {
-        console.warn("RevenueCat entitlement check failed:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkEntitlements();
-  }, []);
-
-  return { isPremium, loading };
+  const a = useAccess();
+  return {
+    loading: a.loading,
+    isPremium: a.isPremium,
+    // Optional extras if you want them later:
+    isStandard: a.isStandard,
+    refresh: a.refresh,
+  };
 }

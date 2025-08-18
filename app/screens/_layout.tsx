@@ -6,13 +6,17 @@ export default function ScreensLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
-        headerBackVisible: false,   // 👈 hide "< …" back row
-        headerLargeTitle: false,
         headerTitleAlign: "center",
+        // headerBackTitleVisible: false, // ❌ not supported in native-stack
+        headerBackVisible: true,          // ✅ optional
+        // headerBackTitle: "",            // ✅ optional if you want no back text on iOS
       }}
     >
-      <Stack.Screen name="gym-details" options={{ title: "Gym Details" }} />
       <Stack.Screen name="submit"      options={{ title: "Submit a Gym" }} />
+      <Stack.Screen name="update-gym"  options={{ title: "Update Gym" }} />
+      <Stack.Screen name="upgrade"     options={{ title: "Upgrade to Premium" }} />
+      <Stack.Screen name="subscribe"   options={{ title: "Choose your plan" }} />
+      <Stack.Screen name="gym-details" options={{ headerShown: false,title: "Gym Details" }} />
     </Stack>
   );
 }
