@@ -1,17 +1,21 @@
 // app/index.tsx
 import React, { useEffect } from "react";
 import { View, Image, StyleSheet, Text, Linking, Pressable, Dimensions } from "react-native";
-import AnimatedClock from "../components/AnimatedClock";
-import { useRouter, Stack } from "expo-router"; // 👈 add Stack
+import { Stack, useRouter } from "expo-router";
 import { useLocation } from "../components/LocationContext";
 import * as Location from "expo-location";
+import { useAccess } from "../hooks/useAccess";
 
 const screenWidth = Dimensions.get("window").width;
 
-const SplashScreen = () => {
+export default function SplashScreen() {
   const router = useRouter();
   const { setLocation } = useLocation();
 
+  // 🔑 read entitlements here (inside the component)
+  const { loading: accessLoading, hasAnyAccess } = useAccess();
+
+  // 1) Get location (unchanged from your version)
   useEffect(() => {
     const fetchLocation = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -33,15 +37,24 @@ const SplashScreen = () => {
         }
       }
     };
-
     fetchLocation();
+  }, [setLocation]);
+
+  // 2) After 3s, navigate based on entitlements
+  useEffect(() => {
+    // wait until we know access status
+    if (accessLoading) return;
 
     const timeout = setTimeout(() => {
-      router.replace("/map");
+      if (hasAnyAccess) {
+        router.replace("/map");
+      } else {
+        router.replace("/screens/subscribe");
+      }
     }, 3000);
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [accessLoading, hasAnyAccess, router]);
 
   return (
     <View style={styles.container}>
@@ -49,10 +62,10 @@ const SplashScreen = () => {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.logoRow}>
-       <Image source={require("../assets/appLogo/MATTIME_ForWBackG.png")} style={styles.textLogo} />
-        {/* <Image source={require("../assets/appLogo/Mat.png")} style={styles.textLogo} />
-        <AnimatedClock />
-        <Image source={require("../assets/appLogo/Times2.png")} style={styles.textLogo} /> */}
+        <Image
+          source={require("../assets/appLogo/MATTIME_ForWBackG.png")}
+          style={styles.textLogo}
+        />
       </View>
 
       <View style={styles.branding}>
@@ -63,19 +76,18 @@ const SplashScreen = () => {
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center" },
   logoRow: { flexDirection: "row", alignItems: "center" },
-  textLogo: {   width: screenWidth * 0.8, // 80% of screen width
-  aspectRatio: 1,           // 1:1 (same as 120x120)
-  resizeMode: "contain",
-  marginHorizontal: 8,
- },
+  textLogo: {
+    width: screenWidth * 0.8,
+    aspectRatio: 1,
+    resizeMode: "contain",
+    marginHorizontal: 8,
+  },
   branding: { marginTop: 30, alignItems: "center" },
   byText: { color: "#ccc", fontSize: 16, fontWeight: "600" },
   url: { color: "#00BFFF", fontSize: 14, textDecorationLine: "underline", marginTop: 4 },
 });
-
-export default SplashScreen;
