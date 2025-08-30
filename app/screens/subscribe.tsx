@@ -1,16 +1,7 @@
-// app/screens/subscribe.tsx
-import React, { useEffect, useState } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Purchases from "react-native-purchases";
+import { useEffect, useState, useRef } from "react";
+import { View, Text, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { useAccess } from "../../hooks/useAccess";
-
-
-const OFF_DEFAULT = process.env.EXPO_PUBLIC_RC_OFFERING_DEFAULT || "default";
-const OFF_UPGRADE = process.env.EXPO_PUBLIC_RC_OFFERING_UPGRADE || "premium_upgrade";
-const ENT_STD = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_STANDARD || "standard_access";
-const ENT_PRO = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_PREMIUM || "premium_access";
+import Purchases from "react-native-purchases";
 
 type RCOfferings = Awaited<ReturnType<typeof Purchases.getOfferings>>;
 type RCPackage =
@@ -30,8 +21,9 @@ export default function Subscribe() {
   const [offerings, setOfferings] = useState<RCOfferings | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [reason, setReason] = useState<string | null>(null); // <- why no products
   const router = useRouter();
-  const access = useAccess(); // hook to check access state
+  const configuredRef = useRef(false);
 
   const goBack = () => {
     // @ts-ignore (expo-router newer versions expose canGoBack)
@@ -40,111 +32,134 @@ export default function Subscribe() {
   };
 
   useEffect(() => {
-    let mounted = true;
     (async () => {
       try {
-        const o = await Purchases.getOfferings();
-        if (mounted) {
-          setOfferings(o);
-          console.log("[RC] offerings:", Object.keys(o?.all ?? {}));
-          // log packages & prices to verify you’re showing the right SKU
-          Object.entries(o?.all ?? {}).forEach(([id, off]: any) => {
-            const prices = off?.availablePackages?.map(
-              (p: any) => `${p.identifier} → ${p.product.identifier} (${p.product.priceString})`
-            );
-            console.log(`[RC] ${id}:`, prices);
+        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+
+        // Configure exactly once here if you don't already do it at app start
+        if (!configuredRef.current) {
+          configuredRef.current = true;
+          await Purchases.configure({
+            // Make sure this is your **iOS** public key
+            apiKey: process.env.EXPO_PUBLIC_RC_IOS_KEY!,
+            // appUserID: undefined, // optional: let RC manage anonymous IDs
           });
+          console.log("✅ Purchases configured");
         }
-      } catch {
-        Alert.alert("Error", "Could not load products.");
+
+        const offs = await Purchases.getOfferings();
+        console.log("🧾 Offerings:", JSON.stringify(offs, null, 2));
+        setOfferings(offs);
+
+        // Explain why empty, for quick diagnosis
+        if (!offs.current) setReason("No current offering set in RevenueCat.");
+        else if (!offs.current.availablePackages?.length)
+          setReason("Current offering has zero available packages.");
+      } catch (e: any) {
+        console.log("❌ getOfferings error:", e?.message || e);
+        setReason(`getOfferings error: ${e?.message || String(e)}`);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     })();
-    return () => { mounted = false; };
   }, []);
 
-  // pick explicit packages by RC package identifiers
-  const stdPkg = getPackageById(offerings, OFF_DEFAULT, "standard");
-  const premiumPkg =
-    getPackageById(offerings, OFF_DEFAULT, "premium_full") ??
-    getPackageById(offerings, OFF_UPGRADE, "premium_full") ??
-    getPackageById(offerings, OFF_UPGRADE, "premium_upgrade");
-
-const buy = async (pkg?: RCPackage) => {
-  if (!pkg) {
-    Alert.alert("Unavailable", "This product isn't available yet. Try again shortly.");
-    return;
-  }
-  try {
-    setBusy(true);
-    const { customerInfo } = await Purchases.purchasePackage(pkg as any);
-    console.log("[RC] active after buy:", Object.keys(customerInfo.entitlements.active));
-
-    // make the gate flip immediately
-    try { await access.refresh(); } catch {}
-
-    const gotPro = !!customerInfo.entitlements.active[ENT_PRO];
-    const gotStd = gotPro || !!customerInfo.entitlements.active[ENT_STD];
-
-    if (gotStd) {
-      Alert.alert("Success", gotPro ? "Premium activated." : "Standard activated.");
-      router.replace("/");
-    } else {
-      Alert.alert("Info", "Purchase completed but entitlement not active yet.");
-    }
-  } catch (e: any) {
-    if (e?.userCancelled) return;
-    Alert.alert("Purchase failed", e?.message ?? "Try again later.");
-  } finally {
-    setBusy(false);
-  }
-};
-
-
-  if (loading) return <View style={s.center}><ActivityIndicator /></View>;
-
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {/* Back button at the top */}
-      <TouchableOpacity onPress={goBack} style={s.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
-        <Text style={s.backTxt}>← Back</Text>
-      </TouchableOpacity>
-
-      <View style={s.wrap}>
-        <Text style={s.title}>Choose your plan</Text>
-        <Text style={s.subtitle}>Standard = view & interact. Premium = submit/update + all Standard.</Text>
-
-        {stdPkg ? (
-          <TouchableOpacity style={[s.btn, busy && s.dis]} disabled={busy} onPress={() => buy(stdPkg)}>
-            <Text style={s.btnText}>Standard • {stdPkg.product.priceString}</Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={{ marginTop: 8 }}>Standard package unavailable.</Text>
-        )}
-
-        {premiumPkg ? (
-          <TouchableOpacity style={[s.btnOutline, busy && s.dis]} disabled={busy} onPress={() => buy(premiumPkg)}>
-            <Text style={s.btnTextOutline}>Premium • {premiumPkg.product.priceString}</Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={{ marginTop: 8 }}>Premium package unavailable.</Text>
-        )}
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator />
+        <Text style={{ marginTop: 10 }}>Loading plans…</Text>
       </View>
-    </SafeAreaView>
+    );
+  }
+
+  // Prefer the current offering; fall back to a named one like "default"
+  const current = offerings?.current;
+  const fallbackDefault = offerings?.all?.["default"];
+  const hasPackages =
+    (current?.availablePackages?.length ?? 0) > 0 ||
+    (fallbackDefault?.availablePackages?.length ?? 0) > 0;
+
+  if (!hasPackages) {
+    return (
+      <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
+        <Text style={{ fontSize: 18, textAlign: "center", marginBottom: 8 }}>
+          Plans are unavailable right now.
+        </Text>
+        <Text style={{ textAlign: "center", color: "gray" }}>
+          {reason ??
+            "No packages returned from the App Store. Check your iOS key, RC offering, and App Store Connect metadata."}
+        </Text>
+        <TouchableOpacity onPress={goBack} style={{ marginTop: 16, alignSelf: "center" }}>
+          <Text style={{ color: "#007AFF" }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const std =
+    getPackageById(offerings, "default", "standard") ??
+    current?.availablePackages?.find((p: any) => p.identifier === "standard") ??
+    null;
+
+  const prem =
+    getPackageById(offerings, "default", "premium") ??
+    current?.availablePackages?.find((p: any) => p.identifier === "premium") ??
+    null;
+
+  // Render your packages/buttons—example:
+  return (
+    <View style={{ flex: 1, padding: 20, justifyContent: "center", gap: 16 }}>
+      <Text style={{ fontSize: 22, textAlign: "center", marginBottom: 12 }}>
+        Choose your plan
+      </Text>
+
+      {std && (
+        <TouchableOpacity
+          disabled={busy}
+          onPress={async () => {
+            try {
+              setBusy(true);
+              const { customerInfo } = await Purchases.purchasePackage(std);
+              console.log("✅ Purchased standard:", customerInfo);
+              // TODO: unlock access based on entitlement
+              router.replace("/map");
+            } catch (e: any) {
+              if (!e?.userCancelled) Alert.alert("Purchase failed", e?.message || String(e));
+            } finally {
+              setBusy(false);
+            }
+          }}
+          style={{ padding: 16, backgroundColor: "#eee", borderRadius: 8 }}
+        >
+          <Text style={{ textAlign: "center", fontSize: 16 }}>
+            Standard {std.product.priceString}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {prem && (
+        <TouchableOpacity
+          disabled={busy}
+          onPress={async () => {
+            try {
+              setBusy(true);
+              const { customerInfo } = await Purchases.purchasePackage(prem);
+              console.log("✅ Purchased premium:", customerInfo);
+              router.replace("/map");
+            } catch (e: any) {
+              if (!e?.userCancelled) Alert.alert("Purchase failed", e?.message || String(e));
+            } finally {
+              setBusy(false);
+            }
+          }}
+          style={{ padding: 16, backgroundColor: "#eee", borderRadius: 8 }}
+        >
+          <Text style={{ textAlign: "center", fontSize: 16 }}>
+            Premium {prem.product.priceString}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
-
-const s = StyleSheet.create({
-  center:{flex:1,alignItems:"center",justifyContent:"center"},
-  wrap:{flex:1,padding:20,alignItems:"center",justifyContent:"center"},
-  title:{fontSize:24,fontWeight:"700",marginBottom:6},
-  subtitle:{fontSize:14,color:"#555",textAlign:"center",marginBottom:18},
-  btn:{backgroundColor:"#007AFF",paddingVertical:12,paddingHorizontal:18,borderRadius:10,marginBottom:10},
-  btnText:{color:"#fff",fontWeight:"700"},
-  btnOutline:{borderWidth:2,borderColor:"#007AFF",paddingVertical:12,paddingHorizontal:18,borderRadius:10},
-  btnTextOutline:{color:"#007AFF",fontWeight:"700"},
-  dis:{opacity:0.6},
-  backBtn:{position:"absolute",left:12,top:8,zIndex:10,padding:8},
-  backTxt:{fontSize:16,color:"#007AFF",fontWeight:"600"}
-});

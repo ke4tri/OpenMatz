@@ -42,6 +42,7 @@ export default function SplashScreen() {
 
   // 2) After 3s, navigate based on entitlements
   useEffect(() => {
+    console.log("[Splash] accessLoading:", accessLoading, "hasAnyAccess:", hasAnyAccess);
     // wait until we know access status
     if (accessLoading) return;
 
