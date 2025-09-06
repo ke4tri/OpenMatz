@@ -17,15 +17,19 @@ import {
 } from "react-native";
 import MapView, { Region } from "react-native-maps";
 import GymMarker from "../../components/GymMarker";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useLocation } from "../../components/LocationContext";
 import { db } from "../../Firebase/firebaseConfig";
 //import AnimatedClock from "../../components/AnimatedClock";
 import localGyms from "../../assets/gyms.json"; // fallback — adjust path
 
 import { getDocs, collection } from "firebase/firestore/lite";
+import Purchases from "react-native-purchases";
 
 const screenWidth = Dimensions.get("window").width;
+
+const ENT_STD = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_STANDARD ?? "standard_access";
+const ENT_PRO  = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_PREMIUM  ?? "premium_access";
 
 const LogoRow = () => {
   const router = useRouter();
@@ -47,6 +51,26 @@ const LogoRow = () => {
 type MarkerRef = { hideCallout: () => void; showCallout: () => void };
 
 export default function MapScreen() {
+  const router = useRouter();
+
+useFocusEffect(
+  useCallback(() => {
+    let alive = true;
+    (async () => {
+      const info = await Purchases.getCustomerInfo();
+      const hasPro = !!info.entitlements.active[ENT_PRO];
+      const hasStd = hasPro || !!info.entitlements.active[ENT_STD];
+
+      if (alive && !hasStd) {
+        router.replace("/subscribe");
+      }
+    })();
+    return () => { alive = false; };
+  }, [])
+);
+
+
+
   try {
     // console.log("🚀 MapScreen rendering...");
 
@@ -71,6 +95,19 @@ export default function MapScreen() {
     const mapRef = useRef<MapView | null>(null);
     const [mapKey, setMapKey] = useState(0);
     const [initialLoaded, setInitialLoaded] = useState(false);
+
+    // map.tsx
+useEffect(() => {
+  (async () => {
+    const info = await Purchases.getCustomerInfo();
+    const hasPro = !!info.entitlements.active[process.env.EXPO_PUBLIC_RC_ENTITLEMENT_PREMIUM ?? "premium_access"];
+    const hasStd = hasPro || !!info.entitlements.active[process.env.EXPO_PUBLIC_RC_ENTITLEMENT_STANDARD ?? "standard_access"];
+    if (!hasStd) {
+      router.replace("/subscribe"); // or your subscribe path
+    }
+  })();
+}, []);
+
 
       useEffect(() => {
         let cancelled = false;
@@ -187,8 +224,9 @@ export default function MapScreen() {
           style={styles.map}
           region={region}
           onRegionChangeComplete={onRegionChangeComplete}
+          followsUserLocation={!didCenter && Platform.OS === "ios"}
           showsUserLocation
-            onUserLocationChange={handleUserLocationChange}
+          onUserLocationChange={handleUserLocationChange}
         >
           {markers}
         </MapView>

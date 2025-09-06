@@ -1,165 +1,128 @@
-import { useEffect, useState, useRef } from "react";
-import { View, Text, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import Purchases from "react-native-purchases";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
-type RCOfferings = Awaited<ReturnType<typeof Purchases.getOfferings>>;
-type RCPackage =
-  NonNullable<NonNullable<RCOfferings["current"]>["availablePackages"]>[number];
-
-const getPackageById = (
-  offerings: RCOfferings | null,
-  offeringId: string,
-  packageId: string
-): RCPackage | null => {
-  const off = offerings?.all?.[offeringId];
-  const pkg = off?.availablePackages?.find((p: any) => p.identifier === packageId);
-  return (pkg ?? null) as any;
-};
+const ENT_STD = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_STANDARD ?? "standard_access";
+const ENT_PRO  = process.env.EXPO_PUBLIC_RC_ENTITLEMENT_PREMIUM  ?? "premium_access";
+const OFF_DEFAULT = process.env.EXPO_PUBLIC_RC_OFFERING_DEFAULT ?? "default";
 
 export default function Subscribe() {
-  const [offerings, setOfferings] = useState<RCOfferings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [reason, setReason] = useState<string | null>(null); // <- why no products
   const router = useRouter();
-  const configuredRef = useRef(false);
-
-  const goBack = () => {
-    // @ts-ignore (expo-router newer versions expose canGoBack)
-    if (router.canGoBack?.()) router.back();
-    else router.replace("/");
-  };
+  const [loading, setLoading] = useState(true);
+  const [offering, setOffering] = useState<any | null>(null); // store the RC offering object
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
     (async () => {
       try {
-        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
-
-        // Configure exactly once here if you don't already do it at app start
-        if (!configuredRef.current) {
-          configuredRef.current = true;
-          await Purchases.configure({
-            // Make sure this is your **iOS** public key
-            apiKey: process.env.EXPO_PUBLIC_RC_IOS_KEY!,
-            // appUserID: undefined, // optional: let RC manage anonymous IDs
-          });
-          console.log("✅ Purchases configured");
+        // If you configure Purchases earlier, you can remove this.
+        try {
+          await Purchases.configure({ apiKey: process.env.EXPO_PUBLIC_RC_IOS_KEY! });
+        } catch (e) {
+        //  console.log("[Subscribe] Purchases.configure error (ok if already configured):", e);
         }
 
-        const offs = await Purchases.getOfferings();
-        console.log("🧾 Offerings:", JSON.stringify(offs, null, 2));
-        setOfferings(offs);
+        // If already entitled, skip
+        const info = await Purchases.getCustomerInfo();
+        const hasPro = !!info.entitlements.active[ENT_PRO];
+        const hasStd = hasPro || !!info.entitlements.active[ENT_STD];
+        console.log("[Subscribe] Active entitlements:", Object.keys(info.entitlements.active), "hasStd:", hasStd);
+        if (hasStd) {
+          router.replace("/map");
+          return;
+        }
 
-        // Explain why empty, for quick diagnosis
-        if (!offs.current) setReason("No current offering set in RevenueCat.");
-        else if (!offs.current.availablePackages?.length)
-          setReason("Current offering has zero available packages.");
-      } catch (e: any) {
-        console.log("❌ getOfferings error:", e?.message || e);
-        setReason(`getOfferings error: ${e?.message || String(e)}`);
+        // Load offerings
+        const offs = await Purchases.getOfferings();
+        const keys = Object.keys(offs.all ?? {});
+        console.log("[Subscribe] offerings keys:", keys);
+
+        let chosen =
+          offs.all?.[OFF_DEFAULT]          // 1) try explicit id (e.g., "default")
+          ?? offs.current                  // 2) try current offering
+          ?? (keys.length ? offs.all?.[keys[0]] : null); // 3) try first available
+
+        if (!chosen) {
+          setErrorMsg(`No offering found. Check that your RC offering "${OFF_DEFAULT}" exists and has a Paywall assigned.`);
+        }
+
+        if (mounted) setOffering(chosen ?? null);
+      } catch (e) {
+      //  console.log("[Subscribe] init error:", e);
+        setErrorMsg("Could not load products.");
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     })();
+    return () => { mounted = false; };
   }, []);
+
+  const onPressSubscribe = async () => {
+    try {
+      if (!offering) {
+        Alert.alert("Unavailable", "No offering is configured yet. Please try again later.");
+        return;
+      }
+      const result = await RevenueCatUI.presentPaywall({ offering });
+       console.log("[Subscribe] presentPaywall result:", result);
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+        const updated = await Purchases.getCustomerInfo();
+        const unlocked = !!updated.entitlements.active[ENT_PRO] ||
+                         !!updated.entitlements.active[ENT_STD];
+        if (unlocked) {
+          router.replace("/map");
+          return;
+        }
+      }
+      // user cancelled or not unlocked → stay here
+    } catch (e) {
+       console.log("[Subscribe] presentPaywall error:", e);
+    }
+  };
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ flex:1, justifyContent:"center", alignItems:"center" }}>
         <ActivityIndicator />
-        <Text style={{ marginTop: 10 }}>Loading plans…</Text>
       </View>
     );
   }
 
-  // Prefer the current offering; fall back to a named one like "default"
-  const current = offerings?.current;
-  const fallbackDefault = offerings?.all?.["default"];
-  const hasPackages =
-    (current?.availablePackages?.length ?? 0) > 0 ||
-    (fallbackDefault?.availablePackages?.length ?? 0) > 0;
-
-  if (!hasPackages) {
-    return (
-      <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
-        <Text style={{ fontSize: 18, textAlign: "center", marginBottom: 8 }}>
-          Plans are unavailable right now.
-        </Text>
-        <Text style={{ textAlign: "center", color: "gray" }}>
-          {reason ??
-            "No packages returned from the App Store. Check your iOS key, RC offering, and App Store Connect metadata."}
-        </Text>
-        <TouchableOpacity onPress={goBack} style={{ marginTop: 16, alignSelf: "center" }}>
-          <Text style={{ color: "#007AFF" }}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const std =
-    getPackageById(offerings, "default", "standard") ??
-    current?.availablePackages?.find((p: any) => p.identifier === "standard") ??
-    null;
-
-  const prem =
-    getPackageById(offerings, "default", "premium") ??
-    current?.availablePackages?.find((p: any) => p.identifier === "premium") ??
-    null;
-
-  // Render your packages/buttons—example:
   return (
-    <View style={{ flex: 1, padding: 20, justifyContent: "center", gap: 16 }}>
-      <Text style={{ fontSize: 22, textAlign: "center", marginBottom: 12 }}>
-        Choose your plan
+    <View style={{ flex:1, padding:24, justifyContent:"center", gap:16 }}>
+      <Text style={{ fontSize:22, fontWeight:"700", textAlign:"center" }}>
+        Subscribe to continue
+      </Text>
+      <Text style={{ textAlign:"center", color:"#666" }}>
+        Standard: view & interact. Premium: submit/update gyms + everything in Standard.
       </Text>
 
-      {std && (
-        <TouchableOpacity
-          disabled={busy}
-          onPress={async () => {
-            try {
-              setBusy(true);
-              const { customerInfo } = await Purchases.purchasePackage(std);
-              console.log("✅ Purchased standard:", customerInfo);
-              // TODO: unlock access based on entitlement
-              router.replace("/map");
-            } catch (e: any) {
-              if (!e?.userCancelled) Alert.alert("Purchase failed", e?.message || String(e));
-            } finally {
-              setBusy(false);
-            }
-          }}
-          style={{ padding: 16, backgroundColor: "#eee", borderRadius: 8 }}
-        >
-          <Text style={{ textAlign: "center", fontSize: 16 }}>
-            Standard {std.product.priceString}
-          </Text>
-        </TouchableOpacity>
-      )}
+      {errorMsg ? (
+        <Text style={{ textAlign:"center", color:"#C00" }}>{errorMsg}</Text>
+      ) : null}
 
-      {prem && (
-        <TouchableOpacity
-          disabled={busy}
-          onPress={async () => {
-            try {
-              setBusy(true);
-              const { customerInfo } = await Purchases.purchasePackage(prem);
-              console.log("✅ Purchased premium:", customerInfo);
-              router.replace("/map");
-            } catch (e: any) {
-              if (!e?.userCancelled) Alert.alert("Purchase failed", e?.message || String(e));
-            } finally {
-              setBusy(false);
-            }
-          }}
-          style={{ padding: 16, backgroundColor: "#eee", borderRadius: 8 }}
-        >
-          <Text style={{ textAlign: "center", fontSize: 16 }}>
-            Premium {prem.product.priceString}
-          </Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        onPress={onPressSubscribe}
+        disabled={!offering}
+        style={{
+          opacity: offering ? 1 : 0.5,
+          backgroundColor:"#007AFF",
+          paddingVertical:14,
+          borderRadius:10,
+          alignItems:"center"
+        }}
+      >
+        <Text style={{ color:"#fff", fontWeight:"700" }}>
+          {offering ? "Subscribe" : "Loading products…"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => router.replace("/")}>
+        <Text style={{ textAlign:"center", color:"#007AFF" }}>Back</Text>
+      </TouchableOpacity>
     </View>
   );
 }

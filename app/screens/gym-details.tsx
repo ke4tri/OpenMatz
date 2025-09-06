@@ -29,7 +29,7 @@ export default function GymDetailsScreen() {
     );
   }
 const isPremium = usePremiumStatus();
-console.log("🧪 isPremium:", isPremium);
+// console.log("🧪 isPremium:", isPremium);
 
 
   const { name, logo, phone, email } = parsed;

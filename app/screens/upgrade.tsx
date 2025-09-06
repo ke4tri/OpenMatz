@@ -45,7 +45,7 @@ export default function Upgrade() {
             const prices = off?.availablePackages?.map(
               (p: any) => `${p.identifier} → ${p.product.identifier} (${p.product.priceString})`
             );
-            console.log(`[RC] ${id}:`, prices);
+            // console.log(`[RC] ${id}:`, prices);
           });
         }
       } catch {
@@ -72,8 +72,8 @@ export default function Upgrade() {
   // compute premium package (pure, no hooks)
   const premiumPkg = useMemo(() => {
     return (
-      getPackageById(offerings, OFF_UPGRADE, "premium_full") ??
-      getPackageById(offerings, OFF_UPGRADE, "premium_upgrade")
+      getPackageById(offerings, OFF_UPGRADE, "premium_upgrade") ??
+      getPackageById(offerings, OFF_UPGRADE, "premium_full")
     );
   }, [offerings]);
 
@@ -87,9 +87,9 @@ const buy = async () => {
   }
   try {
     setBusy(true);
-    console.log("[RC] buying package:", premiumPkg.identifier, "->", premiumPkg.product.identifier, premiumPkg.product.priceString);
+    // console.log("[RC] buying package:", premiumPkg.identifier, "->", premiumPkg.product.identifier, premiumPkg.product.priceString);
     const { customerInfo } = await Purchases.purchasePackage(premiumPkg as any);
-    console.log("[RC] active after buy:", Object.keys(customerInfo.entitlements.active));
+    // console.log("[RC] active after buy:", Object.keys(customerInfo.entitlements.active));
 
     // make the gate flip immediately
     try { await access.refresh(); } catch {}
@@ -102,7 +102,7 @@ const buy = async () => {
       Alert.alert("Info", "Purchase completed but entitlement not active yet.");
     }
   } catch (e: any) {
-    console.log("[RC] purchase error:", e);
+    // console.log("[RC] purchase error:", e);
     if (e?.userCancelled) return;
     Alert.alert("Purchase failed", e?.message ?? "Try again later.");
   } finally {
