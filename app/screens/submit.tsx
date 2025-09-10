@@ -167,7 +167,7 @@ useFocusEffect(
   };
 
   const handleSubmit = async () => {
-    console.log("▶️ Submit pressed (timestamp id)");
+    // console.log("▶️ Submit pressed (timestamp id)");
     try {
       const id = Date.now().toString();
       const newGym: Gym = {
@@ -187,7 +187,7 @@ useFocusEffect(
 
       await setDoc(doc(db, "pendingGyms", id), newGym);
 
-      console.log("✅ Write complete:", id);
+      // console.log("✅ Write complete:", id);
       Alert.alert("Success", "Gym submitted for review.");
       router.replace("/(tabs)/map");
     } catch (err: any) {

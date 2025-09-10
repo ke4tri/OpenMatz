@@ -27,6 +27,7 @@ export default {
     android: {
       package: "com.ke4tri.openmats"
     },
+    // plugins: ['react-native-purchases'],
     extra: {
       opencageApiKey: process.env.OPENCAGE_API_KEY,
       REVENUECAT_PUBLIC_KEY: process.env.REVENUECAT_PUBLIC_KEY,

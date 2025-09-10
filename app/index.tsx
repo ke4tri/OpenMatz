@@ -1,60 +1,57 @@
 // app/index.tsx
-import React, { useEffect } from "react";
-import { View, Image, StyleSheet, Text, Linking, Pressable, Dimensions } from "react-native";
+import { useEffect } from "react";
+import { View, Image, StyleSheet, Text, Pressable, Linking, Dimensions } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { useLocation } from "../components/LocationContext";
-import * as Location from "expo-location";
-import { useAccess } from "../hooks/useAccess";
+import Purchases, { LOG_LEVEL } from "react-native-purchases";
 
+const MAP_PATH = "/(tabs)/map";       // ← change to "/map" if that's your route
+const SUBSCRIBE_PATH = "screens/subscribe";
+const MIN_SPLASH_MS = 3000;
 const screenWidth = Dimensions.get("window").width;
 
-export default function SplashScreen() {
+function sleep(ms: number) {
+  return new Promise((res) => setTimeout(res, ms));
+}
+
+export default function WelcomeScreen() {
   const router = useRouter();
-  const { setLocation } = useLocation();
 
-  // 🔑 read entitlements here (inside the component)
-  const { loading: accessLoading, hasAnyAccess } = useAccess();
-
-  // 1) Get location (unchanged from your version)
   useEffect(() => {
-    const fetchLocation = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === "granted") {
-        const cachedLoc = await Location.getLastKnownPositionAsync({});
-        if (cachedLoc) {
-          setLocation({
-            latitude: cachedLoc.coords.latitude,
-            longitude: cachedLoc.coords.longitude,
-          });
-          console.log("✅ Using cached location");
-        } else {
-          const loc = await Location.getCurrentPositionAsync({});
-          setLocation({
-            latitude: loc.coords.latitude,
-            longitude: loc.coords.longitude,
-          });
-          console.log("✅ Using fresh location");
-        }
+    let cancelled = false;
+
+    async function checkAccess(): Promise<boolean> {
+      try {
+        // Keep RC quiet & consistent during startup
+        Purchases.setLogLevel(LOG_LEVEL.WARN);
+
+        // Avoid stale cache while testing
+        await Purchases.invalidateCustomerInfoCache();
+
+        const info = await Purchases.getCustomerInfo();
+        const active = info.entitlements?.active ?? {};
+        const hasStd = !!active["standard"];
+        const hasPremium = !!active["premium"];
+        const hasAccess = hasStd || hasPremium;
+
+        console.log("[SplashGate] active:", Object.keys(active));
+        console.log("[SplashGate] hasStd:", hasStd, "hasPremium:", hasPremium, "hasAccess:", hasAccess);
+
+        return hasAccess;
+      } catch (e) {
+        console.log("[SplashGate] RC error → treating as no access:", e);
+        return false;
       }
+    }
+
+    (async () => {
+      const [hasAccess] = await Promise.all([checkAccess(), sleep(MIN_SPLASH_MS)]);
+      if (!cancelled) router.replace(hasAccess ? MAP_PATH : SUBSCRIBE_PATH);
+    })();
+
+    return () => {
+      cancelled = true;
     };
-    fetchLocation();
-  }, [setLocation]);
-
-  // 2) After 3s, navigate based on entitlements
-  useEffect(() => {
-    // wait until we know access status
-    if (accessLoading) return;
-
-    const timeout = setTimeout(() => {
-      if (hasAnyAccess) {
-        router.replace("/map");
-      } else {
-        router.replace("/screens/subscribe");
-      }
-    }, 3000);
-
-    return () => clearTimeout(timeout);
-  }, [accessLoading, hasAnyAccess, router]);
+  }, [router]);
 
   return (
     <View style={styles.container}>
@@ -65,6 +62,7 @@ export default function SplashScreen() {
         <Image
           source={require("../assets/appLogo/MATTIME_ForWBackG.png")}
           style={styles.textLogo}
+          resizeMode="contain"
         />
       </View>
 

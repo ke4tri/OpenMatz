@@ -456,21 +456,21 @@ const UpdateGymScreen = () => {
         membershipRequired: formData.membershipRequired ?? false,
       };
 
-      console.log("🟡 Attempting to write to Firestore...");
-      console.log("🧪 newGym.id:", newGym.id);
-      console.log("📦 Data:", {
-        ...newGym,
-        updatedAt: new Date().toISOString()
-      });
+      // console.log("🟡 Attempting to write to Firestore...");
+      // console.log("🧪 newGym.id:", newGym.id);
+      // console.log("📦 Data:", {
+      //   ...newGym,
+      //   updatedAt: new Date().toISOString()
+      // });
 
       try {
         await setDoc(doc(db, "pendingGyms", newGym.id), {
           ...newGym,
           updatedAt: new Date().toISOString(),
         });
-        console.log("✅ Firestore write successful.");
+        // console.log("✅ Firestore write successful.");
       } catch (err) {
-        console.error("❌ Firestore write failed:", err);
+        // console.error("❌ Firestore write failed:", err);
         Alert.alert("Error", "Could not save to Firestore.");
         return;
       }
@@ -479,7 +479,7 @@ const UpdateGymScreen = () => {
       router.replace("/(tabs)/map");
 
     } catch (err) {
-      console.error("❌ Unexpected error in handleSubmit:", err);
+      // console.error("❌ Unexpected error in handleSubmit:", err);
       Alert.alert("Unexpected Error", "Something went wrong. Please try again.");
     }
   };
