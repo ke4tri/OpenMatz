@@ -20,9 +20,6 @@ import GymMarker from "../../components/GymMarker";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useLocation } from "../../components/LocationContext";
 import { db } from "../../Firebase/firebaseConfig";
-//import AnimatedClock from "../../components/AnimatedClock";
-import localGyms from "../../assets/gyms.json"; // fallback — adjust path
-
 import { getDocs, collection } from "firebase/firestore/lite";
 import Purchases from "react-native-purchases";
 
@@ -121,14 +118,9 @@ useEffect(() => {
 
             if (!cancelled) setGyms(approved);   // ✅ only once, inside guard
           } catch (error) {
-            console.warn("❌ Firestore failed, falling back to bundled gyms:", error);
-            if (!cancelled) {
-              const approvedLocal = (localGyms as any[])
-                .map((g, i) => ({ id: g.id ?? `local-${i}`, ...g }))
-                .filter((g: any) => g?.approved);
-              setGyms(approvedLocal);
-            }
-          } finally {
+              console.warn("❌ Firestore failed:", error);
+              if (!cancelled) setGyms([]);
+            } finally {
             if (!cancelled) {
               setRegion(prev => {
                 const nudged = { ...prev, latitude: prev.latitude + 0.0005 };

@@ -34,12 +34,12 @@ yarn-error.*
 *.pem
 *.psd
 
-# local env files
+# local env files #comment out eas.json, app.json, app.json.back before eas build
 eas.json
 app.json
 app.json.bak
 
-# Env
+# Env comment out .env and .env.local before eas build
 .env
 .env*.local
 
@@ -49,7 +49,6 @@ app.json.bak
 *.tsbuildinfo
 
 app-example
-assets/gyms.json
 assets/gyms_nozip.json
 scripts/uploadGyms.ts
 scripts/uploadGyms.mts
