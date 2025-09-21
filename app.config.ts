@@ -2,12 +2,13 @@ import "dotenv/config";
 
 export default {
   expo: {
-    name: "OpenMats",
+    name: "MatTimes",
     slug: "openmats",
     scheme: "openmats",
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "light",
+    icon: "./assets/appLogo/MatTimesLogoFinal2.png",
     updates: {
       fallbackToCacheTimeout: 0
     },
